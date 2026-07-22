@@ -1,0 +1,9 @@
+abd(cola_larga ) .
+abd(crear_taquilla ) .
+abd(taq_vacias ) .
+abd(elim_taquilla ) .
+abd(revisa_cola ) .
+observable(cola_larga ) .
+observable(taq_vacias ) .
+user_built(timing(_ ) ) .
+timing(T ) :- gensym('' , C ) , atom_number(C , T ) .

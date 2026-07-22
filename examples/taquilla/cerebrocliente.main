@@ -1,0 +1,6 @@
+abd(queja_gerente ) .
+abd(revisa_tiempo ) .
+observable(mucho_tiempo_espera ) .
+abd(cola_larga ) .
+user_built(timing(_ ) ) .
+timing(T ) :- gensym('' , C ) , atom_number(C , T ) .

@@ -1,0 +1,13 @@
+para sigo_procedimiento(X, Y) haga consulto_manual(X). 
+
+para sigo_procedimiento(W, R) haga invento_manual(X, R). 
+
+para consulto_manual(X) haga existe(X), lee(X).  
+
+para invento_manual(X, Y) haga pida_carta_autoridad, resuelvo(lentamente, X, Y).
+
+para muy_importante(Algo) haga aparece_en_la_ley(Algo). 
+ 
+
+
+

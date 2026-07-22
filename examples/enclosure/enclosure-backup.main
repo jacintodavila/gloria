@@ -1,0 +1,48 @@
+% enclosure.main (or .pl)
+% 
+% Jacinto Davila
+% 2026/01/28
+
+:- encoding(utf8). 
+
+/****************************************************** libraries */
+% :- ['../../flach/mis.pl'].   %learning library. 
+
+% This must be include to use gloria and its reasoning engine
+:- ['../../gloria.pl']. 
+
+% the agent's knowledge base
+:- ['enclosure.kb']. 
+
+:- dynamic ghistory/1.  % the background changes.
+
+tracefile('enclosure.dot').  % see flach/graphviz.pl
+
+for_testing_only(false).
+
+/************************************************** control stuff */
+
+
+abd(shut).
+abd(open). 
+abd(time_day). 
+abd(it_is). 
+
+observable(time_day(_)).
+observable(it_is(_)). 
+
+user_built(existe(_)).
+
+
+
+/*************************************************** user_built */
+
+
+/**************** bias, types and background theory for learning */
+
+
+/************************************************** tests */
+
+
+
+

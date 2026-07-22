@@ -1,0 +1,3 @@
+if_(timing(T), [revisa_cola(T)]).
+if_(cola_larga, [crear_taquilla]).
+if_(taq_vacias, [elim_taquilla]).

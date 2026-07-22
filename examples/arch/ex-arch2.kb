@@ -1,0 +1,5 @@
+def(arch(A), (col(C1, C2), beam(B))).
+def(col(C1, C2), (c(C1), c(C2), do(C1), do(C2))).
+def(beam(B), (b(B), do_b(B))).
+def(neq(X,Y), not(X eq Y)).
+if(build(A,T), [arch(A)]).

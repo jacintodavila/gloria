@@ -1,0 +1,10 @@
+to arch(A) do col(C1, C2), beam(B).
+
+to col(C1,C2) do c(C1), c(C2), doa(C1), doa(C2). 
+
+to beam(B) do b(B), do_b(B). 
+
+
+
+
+

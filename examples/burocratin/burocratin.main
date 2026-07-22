@@ -1,0 +1,50 @@
+% ex-burocratin.main (or .pl)
+% 
+% Jacinto Davila
+% 2007/11/19
+
+:- encoding(utf8). 
+
+/****************************************************** libraries */
+% :- ['../../flach/mis.pl'].   %learning library. 
+
+% This must be include to use gloria and its reasoning engine
+:- ['../../gloria.pl']. 
+
+% the agent's knowledge base
+:- ['ex-burocratin.kb']. 
+
+:- dynamic ghistory/1.  % the background changes.
+
+tracefile('ex-burocratin.dot').  % see flach/graphviz.pl
+
+for_testing_only(false).
+
+/************************************************** control stuff */
+
+
+abd(me_pide).
+abd(lee). 
+
+observable(me_pide(_,_)).
+
+user_built(existe(_)).
+
+
+
+/*************************************************** user_built */
+
+existe(sacar_constancia). 
+existe(reporte). 
+
+
+/**************** bias, types and background theory for learning */
+
+
+/************************************************** tests */
+
+buri :-
+	cycling(1000, [[true, true, true, [], []] ]).
+
+
+

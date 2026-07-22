@@ -1,0 +1,4 @@
+si me_pide(Alguien, Algo) entonces sigo_procedimiento(Algo, Alguien). 
+
+
+si me_pide(Alguien, Algo), muy_importante(Algo) entonces resuelvo(inmediatamente, Algo, Alguien).

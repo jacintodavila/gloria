@@ -1,0 +1,82 @@
+		    Gloria Distribution Directory
+
+** Last update: April 8 2009 (Version 1.1.3)
+
+AUTHOR
+======
+	Jacinto Davila
+	CESIMO
+	Universidad de Los Andes
+	Ingenieria, La Hechicera. 5101.
+	Merida, Venezuela. 
+	E-mail: jacinto@ula.ve, jacinto@cs.bris.ac.auk
+
+
+WEB-HOME
+========
+
+You can have access to Gloria via the website http://gloria.sourceforge.net 
+or via http://webdelprofesor.ula.ve/ingenieria/jacinto. Should you have any
+problem downloading Gloria, please feel free to write to my email. 
+
+Gloria is currently been maintained in the web/subversion site of galatea at
+http://galatea.sourceforge.net
+
+DOCUMENTATION
+=============
+
+You may find a complete description of Gloria at http://webdelprofesor.ula.ve/ingenieria/jacinto/tesis/phd-davila-jacinto.pdf
+
+
+DIRECTORIES
+===========
+
+The Gloria source directory consists of the following files:
+
+gloria.pl	With the main programs and some suggestions to adapt the agent.
+implica.pl	the part of the reasoning engine that deals with implications.
+rplan.pl	the main part of the reasoning engine.
+equiva.pl	predicates to process equivalent formulai.
+rewrite.pl	predicates to cater for equalities and inequalities.
+auxilia.pl	supporting predicates. 
+gcompile.pl	the compiler from openlog and actilog into prolog (.kb)
+tokenizer.pl	a supporting program for gcompile.pl
+ 
+COPYING		the GPL licence covering Gloria
+VERSION		current version of Gloria
+README		this file
+
+the distribution also holds the folder examples, with a subfolder for each of the
+examples. Beware of the path to the sources, when you try to load them. 
+
+Look for this file:
+archmain.pl	An example (notice how to include gloria in your appl).
+
+BUILDING Gloria
+===================
+
+It couldn't be easier. Gloria is a Prolog program witt no even modules. Just include (?[gloria].) the file from within your application and you will have access to all its predicates. 
+
+
+MODIFYING Gloria
+====================
+
+You are free to modify Gloria's sources under the GPL.
+
+
+CONTRIBUTING
+============
+
+We are glad to accept any contribution to Gloria. Just write to our mail addresses and we guarantee a prompt answer and releasing your contribution to the general public, according to GPL. 
+
+We hope we will be able to accept contributions via a versioning systems (CVS or Subversion) in the near future. 
+
+COMMERCIAL USAGE
+================
+
+You are very welcome to use Gloria in a commercial system, under the terms of the GPL. Gloria have been tested on SWI-Prolog (as it is such a simple set up, it should also run on other prologs). You will find that SWI-Prolog is also available as free/libre/open source software, with special provisions (even less demanding that GPL) to allow for commercial usage. 
+
+
+
+
+

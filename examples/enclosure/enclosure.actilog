@@ -1,0 +1,1 @@
+if time_day(Time), it_is(Temp) then adjust_home(Time, Temp). 

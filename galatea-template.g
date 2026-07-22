@@ -1,0 +1,31 @@
+TITLE 
+
+NETWORK
+
+AGENTS
+
+<AGENT-NAME> {
+
+	PROLOG {
+	
+	
+	
+	}
+
+	GOALS {
+	
+	
+	}
+
+	BELIEFS {
+	
+}
+
+INTERFACE
+
+INIT
+
+DECL
+
+
+END.

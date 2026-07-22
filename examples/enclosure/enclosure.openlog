@@ -1,0 +1,5 @@
+to adjust_home(am, sunny) do shut(east_window), open(doors).
+
+to adjust_home(pm, sunny) do shut(west_window), open(doors). 
+
+to adjust_home(Anytime, rainy) do shut(east_window), shut(west_window), shut(doors). 

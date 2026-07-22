@@ -1,0 +1,2 @@
+if_(timing(T),[revisa_tiempo(T)]).
+if_(mucho_tiempo_espera,[queja_gerente]).

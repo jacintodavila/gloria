@@ -1,0 +1,7 @@
+if_(me_pide(Alguien, Algo), [sigo_procedimiento(Algo, Alguien)]).
+if_((me_pide(Alguien, Algo), muy_importante(Algo)), [resuelvo(inmediatamente, Algo, Alguien)]).
+def(sigo_procedimiento(X, Y), consulto_manual(X)).
+def(sigo_procedimiento(W, R), invento_manual(X, R)).
+def(consulto_manual(X), (existe(X), lee(X))).
+def(invento_manual(X, Y), (pida_carta_autoridad, resuelvo(lentamente, X, Y))).
+def(muy_importante(Algo), aparece_en_la_ley(Algo)).

@@ -1,0 +1,122 @@
+% ex-arch.main (or .pl)
+%
+%
+% 
+% Jacinto Davila
+% 2006/08/16
+
+/****************************************************** libraries */
+% :- ['../../flach/mis.pl'].   %learning library. 
+
+% This must be include to use gloria and its reasoning engine
+:- ['../../gloria.pl']. 
+
+% the agent's knowledge base
+:- ['ex-arch.kb']. 
+
+:- dynamic ghistory/1.  % the background changes.
+
+tracefile('ex-arch.dot').  % see flach/graphviz.pl
+
+/************************************************** control stuff */
+% the actual code of the agent is held in the <filename>.kb file
+% and it collects the outputs from the compilers, given inputs like
+% <filename>.openlog and <filename>.actilog 
+% to invoke the compiler, tries loading gcompiler.pl and 
+% run compile(<language>, <sourcefile>, <objectfile>). 
+% If you have more than one language code, you should compile
+% them separately and then combine them into one .kb file
+
+% Just to have an idea of what is in the kb file:
+%
+% arch(A) :- col(C1, C2), beam(B).
+% 
+% col(C1,C2) :- c(C1), c(C2), do(C1), do(C2). 
+% 
+% beam(B) :- b(B), do_b(B). 
+%
+
+% abducible predicates
+%
+abd(do).
+abd(do_b).  
+abd(c).
+abd(b).
+abd(build).
+
+% observable predicates
+observable(build(_)).
+
+% testing predicates (on which abduction is switched off).  
+%
+for_testing_only(c(_)).
+for_testing_only(b(_)).
+for_testing_only(build(_)).
+
+% built-in, user-defined predicates
+%
+user_built(true). 
+
+/**************** bias, types and background theory for learning */
+
+aliteral(do(X), [obj(X)]).
+aliteral(do_b(X), [obj(X)]).
+
+literal(neq(X,Y), [obj(X), obj(Y)]).
+literal(c(X), [obj(X)]).
+literal(col(X,Y), [obj(X), obj(Y)]). 
+
+term(obj(X), [obj(X)]) :- obj(X).
+% term(time(X), [time(X)]) :- time(X). 
+
+obj(1).
+obj(2).
+obj(3).
+obj(4).
+obj(5).
+obj(6).
+obj(7).
+obj(8).
+
+% time(t0).
+% time(t1).
+% time(tl).
+% time(tf). 
+
+bg((neq(X,Y) :- true)) :- obj(X), obj(Y), not(X=Y).
+bg(X) :- ghistory(X). 
+
+ghistory((c(1) :- true)).
+ghistory((c(2) :- true)).
+ghistory((c(4) :- true)).
+ghistory((c(6) :- true)).
+ghistory((c(7) :- true)).
+ghistory((c(5) :- true)).
+ghistory((c(8) :- true)).
+ghistory((do(1) :- true)).
+ghistory((do(2) :- true)).
+ghistory((do(4) :- true)).
+ghistory((do(6) :- true)).
+ghistory((do(7) :- true)).
+ghistory((do(5) :- true)).
+
+/************************************************** tests */
+
+learn(Clauses) :- induce_spec([(col(X,Y):-c(X),c(Y),do(X),do(Y))], [ +col(1,2), +col(2,4), +col(6,7), -col(5,5) ], Clauses). 
+
+learn_from_scratch(Clauses) :- induce_spec([], [ +col(1,2), +col(2,4), +col(6,7), -col(5,5) ], Clauses).
+
+
+demo_arch(R) :- demo_gloria(R,
+	 [[true,true,( c(p,true) :: [(arch(A, T), true)] if true @ [],true), [], []] ], _ ).
+
+
+demo_arch(R, G) :- demo_gloria(R,
+         [[(todo(see,c(5)), todo(see,c(8)), todo(see,b(10)), true),(c(p,true) :: (arch(A), true), true), true, [], []] ], G ).
+
+
+agent :-
+	cycling(100, [[(todo(see,c(5)), todo(see,c(8)), todo(see,b(10)), true),(c(p,true) :: (arch(A), true), true), true, [], []] ]). 
+
+agentif :-
+	cycling(100, [[(todo(see,c(5)), todo(see,c(8)), todo(see,b(10)), true), true, true, [], []] ]).
