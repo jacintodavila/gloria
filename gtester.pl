@@ -1,64 +1,32 @@
-/*  gtester.pl
-    Part of Gloria http://gloria.sourceforge.net
-    
-    Simple text-based tester for Gloria/Galatea agents.
-*/
-
 :- dynamic current_time/1.
-:- ['gloria.pl']. 
-:- dynamic ghistory/1.  % the background changes.
+:- ['gloria.pl'].
+:- dynamic ghistory/1.
+:- dynamic trace_stream/1.
 
-% Start the test
-% Usage: ?- start_test('AgentName', agent_mod).
-% AgentName is the prefix for .main and .kb files.
 start_test(AgentName, AgentModule) :-
     atom_concat(AgentName, '.main', MainFile),
     atom_concat(AgentName, '.kb', KBFile),
-    
     format('Loading ~w...~n', [AgentName]),
-    make_module(AgentModule, MainFile),
-    make_module(AgentModule, KBFile),
-    
-    retractall(current_time(_)),
-    assert(current_time(0)),
-    
-    format('Simulation started for ~w.~n', [AgentModule]),
-    format('Enter inputs as a Prolog list, e.g., [time_day(am), it_is(sunny)].~n'),
-    format('Enter "end." to stop the simulation.~n'),
-    run_loop(AgentModule).
+    (current_predicate(tracefile/1) -> true ; assert(tracefile(_) :- true)),
+    consult(MainFile), consult(KBFile),
+    retractall(current_time(_)), assert(current_time(0)),
+    atom_concat(AgentName, '_trace.log', TraceFile),
+    setup_call_cleanup(open(TraceFile, write, S),
+        (assert(trace_stream(S)), run_loop(AgentModule)),
+        (retractall(trace_stream(_)), close(S))).
 
-% Main interaction loop
 run_loop(Module) :-
     current_time(T),
     format('~n--- Time: ~w ---~n', [T]),
-    write('Inputs (e.g., [time_day(am), it_is(sunny)] or "end"): '),
+    write('Inputs: '),
     read_line_to_string(user_input, InputString),
-    (InputString == "end" -> 
-        write('Simulation finished.'), nl ;
-        (
-            % Robustly parse the input
-            (term_string(Inputs, InputString) ->
-                (
-                    % Run reasoning
-                    prolog_agent(Module, T, 200, Inputs),
-                    
-                    % Retrieve and print actions
-                    findall(act(A, P), Module:actionsmem(Module, T, A, P), Actions),
-                    print_actions(Actions),
-                    
-                    % Advance time
-                    NextT is T + 1,
-                    retract(current_time(T)),
-                    assert(current_time(NextT)),
-                    run_loop(Module)
-                ) ;
-                (write('Invalid input format. Please enter a valid Prolog list.'), nl, run_loop(Module))
-            )
-        )
-    ).
+    (InputString == "end" -> write('Finished.'), nl ;
+        (term_string(Inputs, InputString) ->
+            (prolog_agent(Module, T, 200, Inputs, Actions),
+             (trace_stream(S) -> format(S, 'Time: ~w | Input: ~w | Actions: ~w~n', [T, Inputs, Actions]), flush_output(S) ; true),
+             print_actions(Actions),
+             NextT is T + 1, retract(current_time(T)), assert(current_time(NextT)), run_loop(Module)) ;
+            (write('Invalid input.'), nl, run_loop(Module)))).
 
-% Helper to display actions
-print_actions([]) :- write('  No actions taken.'), nl.
-print_actions([act(A, P)|Rest]) :-
-    format('  Action: ~w(~w)~n', [A, P]),
-    print_actions(Rest).
+print_actions([]) :- write('  No actions.'), nl.
+print_actions([do(A, T)|Rest]) :- format('  Action: ~w(~w)~n', [A, T]), print_actions(Rest).

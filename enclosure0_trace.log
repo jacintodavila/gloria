@@ -1,0 +1,1 @@
+Time: 0 | Input: [time_day(am),it_is(sunny)] | Actions: [do(shut(east_window),0),do(open(doors),0)]

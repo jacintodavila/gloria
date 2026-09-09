@@ -1,0 +1,67 @@
+# pipeline.yaml – adjusted to skip modularize
+pipeline:
+  - name: safety_net
+    agent: SafetyNetAgent
+    description: Run characterization tests and capture baseline.
+    inputs:
+      - path: examples/**/*.g
+    outputs:
+      - path: baseline/
+
+  - name: cleanup
+    agent: CleanupAgent
+    description: Remove dead/commented code, move it to NOTES.md.
+    inputs:
+      - path: "*.pl"
+    outputs:
+      - path: "*.pl"
+      - path: NOTES.md
+    depends_on: [safety_net]
+
+  - name: io_separation
+    agent: IOStrategyAgent
+    description: Abstract read/write/assert calls.
+    inputs:
+      - path: "*.pl"
+    outputs:
+      - path: "*.pl"
+    depends_on: [cleanup]
+
+  - name: test_generation
+    agent: TestGeneratorAgent
+    description: Auto-generate plunit tests.
+    inputs:
+      - path: "*.pl"
+    outputs:
+      - path: test/*.pl
+    depends_on: [io_separation]
+
+  - name: core_model
+    agent: CoreRepresentationAgent
+    description: Document data model.
+    inputs:
+      - path: gloria.pl
+    outputs:
+      - path: gloria.pl
+      - path: docs/data_model.md
+    depends_on: [test_generation]
+
+  - name: benchmark
+    agent: BenchmarkAgent
+    description: Run micro-benchmarks.
+    inputs:
+      - path: "*.pl"
+    outputs:
+      - path: benchmarks/report.txt
+    depends_on: [core_model]
+
+  - name: verification
+    agent: VerificationAgent
+    description: Run tests and compare to baseline.
+    inputs:
+      - path: test/**/*.pl
+      - path: baseline/
+      - path: benchmarks/report.txt
+    outputs:
+      - path: verification_summary.md
+    depends_on: [benchmark]

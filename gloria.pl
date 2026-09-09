@@ -1157,7 +1157,7 @@ goalsmem(_,_, _, [[true, true, true, [], []]]).
 %
 % module adjusted (first stage)
 
-prolog_agent(Ag, T, R, Obs) :-
+prolog_agent(Ag, T, R, Obs, Actions) :-
     retractall(Ag:actionsmem(Ag, _, _, _)),
     retractall(Ag:goalsmem(Ag, _, _)),
     % Ag:goalsmem(Ag, T, [[Abds, Plan, Constraints, HF, HP]|RGs]),
@@ -1188,9 +1188,10 @@ prolog_agent(Ag, T, R, Obs) :-
     assimilating(Observations, NextGs, NewNextGs),
     thinking(Ag, R, NewNextGs, OutGs),
     record_actions(Ag, T, OutGs),
-    record_goals(Ag, T, OutGs).
+    record_goals(Ag, T, OutGs),
+    findall(do(Action, T), (Ag:actionsmem(Ag, T, A, P), Action=..[A|P]), Actions).
 
-%prolog_agent(Ag, T, R, Obs) :-
+%prolog_agent(Ag, T, R, Obs, Actions) :-
 %    goalsmem([[Abds, Plan, Constraints, HF, HP]|RGs]),
 %    ( Constraints = true -> (ic(IC), NewConst = IC, !) ; NewConst = Constraints ),
 %    and_append(Obs, Abds, NewAbds),
