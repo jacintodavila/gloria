@@ -9,8 +9,8 @@ gv_start(FileName):-
 	%writes(['graph [size="4,6"];']),
 	writes(['node [shape=plaintext, fontname=Courier, fontsize=12]']).
 
-gv_start_trace :-
-        tracefile(F),
+gv_start_trace(Mod) :- 
+        Mod:tracefile(F),
         append(F),
         writes(['digraph {']),
 	%writes(['graph [size="4,6"];']),
@@ -28,7 +28,7 @@ gv_stop:-
 	writes(['}']),
 	told.
 
-gv_stop_trace :- tracefile(F), append(F),
+gv_stop_trace(Mod) :- Mod:tracefile(F), append(F),
 	writes(['}']),
 	told.
 
@@ -51,8 +51,8 @@ gv_root(L,N):-
 	writes([N,' [label="',L,'"];']),
 	gv_init_ids(N).
 
-gv_root_trace(L,N):-
-        tracefile(F), append(F), 
+gv_root_trace(M,L,N):-
+        M:tracefile(F), append(F), 
         writes([N,' [label="',L,'"];']),
 	gv_init_ids(N), told.
 
@@ -62,14 +62,14 @@ gv_node(N0,L,N):-
 	writes([N,' [label="',L,'"];']),
 	writes([N0,' -> ',N,';']).
 
-gv_node_trace(N0,L,N):-
-        tracefile(F), append(F), 
+gv_node_trace(M,N0,L,N):-
+        M:tracefile(F), append(F), 
 	gv_id(N),
 	writes([N,' [label="',L,'"];']),
 	writes([N0,' -> ',N,';']), told.
 
-gv_node_trace_given(N0,L,N):- nonvar(N), 
-        tracefile(F), append(F),
+gv_node_trace_given(M,N0,L,N):- nonvar(N), 
+        M:tracefile(F), append(F),
 	writes([N,' [label="',L,'"];']),
 	writes([N0,' -> ',N,';']), told.
 

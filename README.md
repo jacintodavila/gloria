@@ -63,3 +63,27 @@ We are glad to accept any contribution to Gloria. Just write to our email addres
 
 ## COMMERCIAL USAGE
 You are very welcome to use Gloria in a commercial system, under the terms of the GPL. Gloria has been tested on SWI-Prolog.
+
+## WEB INTERFACE
+Gloria includes a modern React-based web interface.
+
+### Prerequisites
+- SWI-Prolog
+- Node.js and npm
+
+### Building the Interface
+1. Build the React client:
+   ```bash
+   cd web/client
+   npm install
+   npm run build
+   ```
+
+### Starting the Server
+1. Run the Prolog server:
+   ```bash
+   cd web/server
+   swipl -s server.pl -g start_server
+   ```
+2. Access the interface at `http://localhost:8080`.
+

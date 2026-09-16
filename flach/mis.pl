@@ -23,27 +23,27 @@
 
 %%% 9.3  Top-down induction %%%
 
-induce_spec(Examples,Clauses):-
-  gv_start_trace, 
+induce_spec(Mod, Examples,Clauses):-
+  gv_start_trace(Mod), 
   gv_root_trace('start',0),
   process_examples(0, [],[],Examples,Clauses, _),
-  gv_stop_trace.
+  gv_stop_trace(Mod).
 
 induce_spec(Ag, Inicial_Theory, Examples,Clauses):-
-  gv_start_trace, 
-  gv_root_trace('start',0),
+  gv_start_trace(Ag), 
+  gv_root_trace(Ag, 'start',0),
   process_examples(Ag, 0, Inicial_Theory,[],Examples,Clauses, _),
-  gv_stop_trace.
+  gv_stop_trace(Ag).
 
 % process the examples
-process_examples(_, N, Clauses,Done,[],Clauses, N).
+process_examples(_, N, Clauses,_Done,[],Clauses, N).
 process_examples(Ag, N, Cls1,Done,[Ex|Exs],Clauses, NNN):-  
   process_example(Ag, N, Cls1,Done,Ex,Cls2, NN),!,
   writef("\n# Learner: %w's example %w processed\n", [Ag, Ex]),
   process_examples(Ag, NN, Cls2,[Ex|Done],Exs,Clauses, NNN).
 
 % process one example
-process_example(Ag, N, Clauses,Done,+Example,Clauses, N):-
+process_example(Ag, N, Clauses,_Done,+Example,Clauses, N):-
   % writef("\n# Learner %w: processing positive example %w",[Ag, +Example]),
   covers(Ag, Clauses,Example).
 process_example(Ag, N, Cls,Done,+Example,Clauses, NN):-
@@ -54,7 +54,7 @@ process_example(Ag, N, Cls,Done,-Example,Clauses, NN):-
   covers(Ag, Cls,Example),
   % writef("\n# Learner %w: specialising negative example %w",[Ag, -Example]),
   specialise(Ag, N, Cls,Done,Example,Clauses, NN).
-process_example(Ag, N, Clauses,Done,-Example,Clauses, N):-
+process_example(Ag, N, Clauses,_Done,-Example,Clauses, N):-
   % writef("\n# Learner %w: processing negative example %w",[Ag, -Example]),
   not covers(Ag, Clauses,Example).
 
@@ -74,7 +74,7 @@ prove_d(Ag, D,Cls,A):-
 	copy_element((A:-B),Cls),	% make copy of clause
     % writef("\n# Learner %w: proving %w from %w and %w\n",[Ag, A,Cls,B]),
 	prove_d(Ag, D1,Cls,B).
-prove_d(Ag, D,Cls,A):-
+prove_d(Ag, _D,_Cls,A):-
     % writef("\n# Learner %w: proving %w from background\n",[Ag, A]),
 	prove_bg(Ag, A). % proving from background knowledge defined in .main
 
@@ -112,16 +112,16 @@ specialise(Ag, N, Cls,Done,Example,Clauses, NNN):-
     process_examples(Ag, NN, [S|Cls1],[],[-Example|Done],Clauses, NNN).
 
 % false_clause(Ag, Cs,E,E,C) <- Ag's C is a false clause in the proof of E (or ok)
-false_clause(_, Cls,Exs,true,ok):-!.
+false_clause(_, _Cls,_Exs,true,ok):-!.
 false_clause(Ag, Cls,Exs,(A,B),X):-!,
 	false_clause(Ag, Cls,Exs,A,Xa),
 	( Xa = ok   -> false_clause(Ag, Cls,Exs,B,X)
 	; otherwise -> X = Xa
 	).
-false_clause(Ag, Cls,Exs,E,ok):-
+false_clause(_Ag, _Cls,Exs,E,ok):-
 	element(+E,Exs),!.
-false_clause(Ag, Cls,Exs,A,ok):-
-	bg(Ag, (H:-B)), would_unify(A,H), !. % gets clause from Ag's Bk. 
+false_clause(Ag, _Cls,_Exs,A,ok):-
+	bg(Ag, (H:-_B)), would_unify(A,H), !. % gets clause from Ag's Bk. 
 false_clause(Ag, Cls,Exs,A,X):-
 	% copy_element((A:-B),Cls),
         clause_matches((A:-B),Cls,Clause), 
@@ -172,7 +172,7 @@ search_clause(Ag, N, Exs,Example,Clause):-
 	literal(Head,Vars),
 	try((Head=Example)),
     % aliteral(Do, AVars), % append(Vars, AVars, AllV), % abducibles not needed
-    ss(AVars, Vars), 
+    ss(_AVars, Vars), 
     % search_clause(Ag, N, 3,a((Head:-Do),Vars),Exs,Example,Clause).
     search_clause(Ag, N, 5,a((Head:-true),Vars),Exs,Example,Clause).
 
@@ -183,7 +183,7 @@ search_clause(Ag, N, Exs,Example,Clause):-
 %	D1 is D+1,
 %	!,search_clause(Ag, N, D1,Current,Exs,Example,Clause).
 % base case
-search_clause_d(Ag, NN, D,a(Clause,Vars),Exs,Example,Clause):-
+search_clause_d(Ag, _NN, _D,a(Clause,_Vars),Exs,Example,Clause):-
 	covers_ex(Ag, Clause,Example,Exs),	% goal
 	not((element(-N,Exs),covers_ex(Ag, Clause,N,Exs))),
 	% gv_answer(NN, Clause), 
@@ -198,13 +198,13 @@ search_clause_d(Ag, N, D,Current,Exs,Example,Clause):-
 % Extensional coverage
 covers_ex(Ag, (Head:-Body),Example,Exs):-
         try((Head=Example,covers_ex(Ag, Body,Exs))).
-covers_ex(_, true,Exs):-!.
+covers_ex(_, true,_Exs):-!.
 covers_ex(Ag, (A,B),Exs):-!,
 	covers_ex(Ag, A,Exs),
 	covers_ex(Ag, B,Exs).
 covers_ex(_, A,Exs):-
 	element(+A,Exs).
-covers_ex(A,Exs):-
+covers_ex(Ag,A,_Exs):-
 	prove_bg(Ag, A).
 
 % specialise_clause(C,S) <- S is a minimal specialisation
@@ -260,7 +260,7 @@ subs_term(Vars,SVars):-
 just_the_same(X,Y) :- X =@= Y. % they are structurally the same
 
 repeated(L,LL) :- just_the_same(L,LL), !.
-repeated(L,(LL,RR)) :- just_the_same(L,LL), !. % exactly the same
+repeated(L,(LL,_RR)) :- just_the_same(L,LL), !. % exactly the same
 repeated(L,(_, RR)) :- repeated(L, RR). 
 
 %%% Queries %%%
@@ -323,7 +323,7 @@ query3(Clauses):-
 not_too_big(And_List) :- and_length(And_List, N), N < 6.
 
 and_length(A, 0) :- not(A=(_,_)).
-and_length((A,B), NN) :- and_length(B, N), NN is N + 1.
+and_length((_A,B), NN) :- and_length(B, N), NN is N + 1.
 
 % subset predicate
 ss([],_).

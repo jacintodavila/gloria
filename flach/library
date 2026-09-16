@@ -36,8 +36,8 @@
 %%% Lists and sets
 
 % element(X,Ys) <- X is an element of the list Ys
-element(X,[X|Ys]).
-element(X,[Y|Ys]):-
+element(X,[X|_Ys]).
+element(X,[_Y|Ys]):-
 	element(X,Ys).
 
 % already in swi-prolog
@@ -52,7 +52,7 @@ remove_one(X,[Y|Ys],[Y|Zs]):-
 	remove_one(X,Ys,Zs).
 
 % subset(Xs,Ys) <- every element of list Xs occurs in list Ys
-subset([],Ys).
+subset([],_Ys).
 subset([X|Xs],Ys):-
 	element(X,Ys),
 	subset(Xs,Ys).
@@ -65,9 +65,9 @@ proper_subset([X|Xs],Ys):-
 	remove_one(X,Ys,Ys1),
 	proper_subset(Xs,Ys1).
 
-var_element(X,[Y|Ys]):-
+var_element(X,[Y|_Ys]):-
 	X == Y.	% syntactic identity
-var_element(X,[Y|Ys]):-
+var_element(X,[_Y|Ys]):-
 	var_element(X,Ys).
 
 var_remove_one(X,[Y|Ys],Ys):-
@@ -86,28 +86,28 @@ var_proper_subset([X|Xs],Ys):-
 
 disj_element(X,X):-	% single-element disjunction
 	not X=false,
-	not X=(One;TheOther).
-disj_element(X,(X;Ys)).
-disj_element(X,(Y;Ys)):-
+	not X=(_One;_TheOther).
+disj_element(X,(X;_Ys)).
+disj_element(X,(_Y;Ys)):-
 	disj_element(X,Ys).
 
 conj_append(true,Ys,Ys).
 conj_append(X,Ys,(X,Ys)):-	% single-element conjunction
 	not X=true, 
-	not X=(One,TheOther).
+	not X=(_One,_TheOther).
 conj_append((X,Xs),Ys,(X,Zs)):-
 	conj_append(Xs,Ys,Zs).
 
 disj_append(false,Ys,Ys).
 disj_append(X,Ys,(X;Ys)):-	% single-element disjunction
 	not X=false, 
-	not X=(One;TheOther).
+	not X=(_One;_TheOther).
 disj_append((X;Xs),Ys,(X;Zs)):-
 	disj_append(Xs,Ys,Zs).
 
 conj_remove_one(X,X,true):-	% single-element conjunction
 	not X=true,
-	not X=(One,TheOther).
+	not X=(_One,_TheOther).
 conj_remove_one(X,(X,Ys),Ys).
 conj_remove_one(X,(Y,Ys),(Y,Zs)):-
 	conj_remove_one(X,Ys,Zs).
@@ -138,7 +138,7 @@ try(Goal):-
 % if no solutions can be found
 setof0(X,G,L):-
 	setof(X,G,L),!.
-setof0(X,G,[]).
+setof0(_X,_G,[]).
 
 % same_predicate(L1,L2) <- literals L1 and L2 have 
 %                          the same predicate and arity

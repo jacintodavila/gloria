@@ -36,7 +36,7 @@ forall1([H|T]):-
 
 bagof0(X,G,L):-
         bagof(X,G,L),!.
-bagof0(X,G,[]).
+bagof0(_X,_G,[]).
 
 varsin(Term,Vars):-
         varsin(Term,[],V),
@@ -45,10 +45,10 @@ varsin(Term,Vars):-
 varsin(V,Vars,[V|Vars]):-
         var(V).
 varsin(Term,V0,V):-
-        functor(Term,F,N),
+        functor(Term,_F,N),
         varsin_args(N,Term,V0,V).
 
-varsin_args(0,Term,Vars,Vars).
+varsin_args(0,_Term,Vars,Vars).
 varsin_args(N,Term,V0,V):-
         N>0, N1 is N-1,
         arg(N,Term,ArgN),

@@ -1,6 +1,6 @@
 tracefile('enclosure.dot' ) .
 % see flach/graphviz .
-pl for_testing_only(false ) .
+for_testing_only(false ) .
 abd(shut ) .
 abd(open ) .
 abd(time_day ) .
@@ -8,10 +8,3 @@ abd(it_is ) .
 observable(time_day(_ ) ) .
 observable(it_is(_ ) ) .
 user_built(existe(_ ) ) .
-abd(shut ) .
-abd(open ) .
-abd(time_day ) .
-abd(it_is ) .
-observable(time_day(_ ) ) .
-observable(it_is(_ ) ) .
-user_built(exist(_ ) ) .

@@ -103,7 +103,7 @@ demo_rules(Ag, R,  _, FlagCN, InGoals, OutGoals ) :-
   FirstPlan = [Abds, ( Cont :: ( G, Rest ), UCRest), CN, HF, M], 
   % writef(" DELTA: %q \n UC %q\n",[Abds, (Cont::(G,Rest), UCRest)]),
   G \= not(_),
-  builtin( G ), !,
+  builtin( Ag, G ), !,
   % writef(" % -> processing built-in %q -> \n",[G]),
   ( G -> NewFirstPlan = [Abds, ( Cont :: Rest, UCRest), CN, HF, M]
   ;      NewFirstPlan = [Abds, ( Cont :: ([], true), true), CN, HF, M] ),
@@ -129,7 +129,7 @@ demo_rules(Ag, R, _, FlagCN, InGoals, OutGoals ) :-
   InGoals = [FirstPlan|AltGoals],
   FirstPlan = [Abds, ( Cont :: ( G, Rest ), UCRest), CN, HF, M], 
   % keeping for_testing_only for backward compatibility
-  (observable(G);for_testing_only( G )), Cont = c(T,L), T\=t, !,
+  (observable(G); Ag:for_testing_only( G )), Cont = c(T,L), T\=t, !,
   % for_testing_only( G ), Cont = c(T,L), T\=t, !,
   write_ir("\n % -> starting testing of -> %q \n",[G]),
 %  write_fr( [[Abds, ( c(t,L) :: (G, true), Cont :: Rest, UCRest), CN, HF, M]|AltGoals] ),
@@ -142,10 +142,10 @@ demo_rules(Ag, R, _, FlagCN, InGoals, OutGoals ) :-
 demo_rules(Ag, R, _, FlagCN, InGoals, OutGoals ) :-
   InGoals = [FirstPlan|AltGoals],
   FirstPlan = [Abds, ( Cont :: ( G, Rest ), UCRest), CN, HF, M],          
-  unfoldable( G ),  !,
+  unfoldable( Ag, G ),  !,
   definition(Ag, Abds, G, D ),
   write_ir(" % -> unfolding -> %q \n",[G]),
-  Cont = c(C,PG), ContP = c(C,G), % Set the new context with G but only for D
+  Cont = c(C,_PG), ContP = c(C,G), % Set the new context with G but only for D
   NewFirstPlan = [Abds, ( ContP :: ( D, true ), Cont :: Rest,  UCRest), CN, HF, M],
   [NewFirstPlan|AltGoals] equiv NextGoals,
   useful_order( R, NextGoals, OrderGoals ),
@@ -176,7 +176,7 @@ demo_rules(Ag, R, _, _, InGoals, OutGoals ) :-
 %
 demo_rules(Ag, R,  _, FlagCN, InGoals, OutGoals ) :-
   rewrite_disj( InGoals, InGoals2 ),
-  factoring( InGoals2, NextGoals ),
+  factoring( Ag, InGoals2, NextGoals ),
 %  write_fr( NextGoals ),
   NewR is R - 1, !,
   rewrite_disj( NextGoals, NextGoals2 ),
@@ -187,7 +187,7 @@ demo_rules(Ag, R,  _, FlagCN, InGoals, OutGoals ) :-
 demo_rules(Ag, R, _, FlagCN, InGoals, OutGoals ) :-
   InGoals = [FirstPlan|AltGoals],
   FirstPlan = [Abds, ( c(p,L) :: ( G, Rest ), UCRest), CN, HF, M],          
-  suspendable( G ),
+  suspendable( Ag, G ),
   suspend( todo(L,G), Abds, NewAbds ), !, % to L do G, new abds structure!
   NR is R - 1,
   demo(Ag, NR, ru_uc, FlagCN, [[NewAbds, ( c(p,L) :: Rest, UCRest), CN, HF, M]|AltGoals], OutGoals).
@@ -197,7 +197,7 @@ demo_rules(Ag, R, _, FlagCN, InGoals, OutGoals ) :-
 demo_rules(Ag, R, _, FlagCN, InGoals, OutGoals ) :-
   InGoals = [FirstPlan|_],
   FirstPlan = [_, ( c(t,_) :: ( G, _ ), _ ), _, _, _],
-  suspendable( G ),
+  suspendable( Ag, G ),
   quick_order( InGoals, NextGoals ), !,
   NewR is R - 1,
   demo(Ag, NewR, ru_uc, FlagCN, NextGoals, OutGoals ). % control back to demo..
@@ -232,7 +232,7 @@ quick_order( [_|Rest], Rest ).
 
 /************************************************************** unfoldable */
 
-unfoldable( G ) :- not(abducible( G )),
+unfoldable( A, G ) :- not(abducible( A, G )),
 	not(equality( G )), not(inequality( G )).
 
 /************************************************************** definition */
@@ -250,7 +250,7 @@ useful_order( _, Goals, Goals ).
 
 /*************************************************************** abducible */
 
-abducible( G ) :- G=..[Ab|_], abd(Ab).
+abducible( Ag, G ) :- G=..[Ab|_], Ag:abd(Ab).
 
 /***************************************************************** suspend */
 
@@ -261,25 +261,25 @@ suspend( G, Abds, NewAbds ) :-
 
 /*************************************************************** factoring */
 
-factoring( InGoals, OutGoals ) :- 
+factoring( Ag, InGoals, OutGoals ) :- 
   InGoals = [[Abds, ( Cont :: ( Pt, Rest ), UCRest), CN, HF, M]|AltGoals],
-  suspendable( Pt ),
+  suspendable( Ag, Pt ),
   ground(Pt), !,
   clause(Pt,_),    % This is because we store some Abd in PROLOG's DB
   write_ir(" % -> factoring/subsuming %q in DB -> \n", [Pt]), 
   OutGoals = [[Abds, ( Cont :: Rest, UCRest), CN, HF, M]|AltGoals].
 
-factoring( InGoals, OutGoals ) :- 
+factoring( Ag, InGoals, OutGoals ) :- 
   InGoals = [[Abds, ( Cont :: ( Pt, Rest ), UCRest), CN, HF, M]|AltGoals],
-  suspendable( Pt ),
+  suspendable( Ag, Pt ),
   % ground(Pt),
   scontain( Abds, todo(_,Pt) ), !,
   write_ir(" % -> factoring/subsuming %q in Delta %q -> \n", [Pt, Abds]), 
   OutGoals = [[Abds, ( Cont :: Rest, UCRest), CN, HF, M]|AltGoals].
 
-factoring( InGoals, OutGoals ) :- 
+factoring( Ag, InGoals, OutGoals ) :- 
   InGoals = [[Abds, ( Cont :: ( Pt, Rest ), UCRest), CN, HF, M]|AltGoals],
-  suspendable( Pt ),
+  suspendable( Ag, Pt ),
   not(scontain( Abds, todo(_,Pt) )),
   findalldb( Pt, HF, LKb ),                % defined in implica.pl
   findallabs( Pt, Abds, HF, LAb, _ ),      % "
@@ -326,7 +326,7 @@ factoring_ineq( InGoals, OutGoals ) :-
 
 /************************************************************** suspendable */
 
-suspendable( G ) :- abducible( G ).
+suspendable( Ag, G ) :- abducible( Ag, G ).
 
 /*********************************************************************** in */
 
@@ -354,13 +354,13 @@ unpack_eq_falsefilter( G, Gs, T_eq_S ) :-
 /***************************************************************** builtin */
 % To define my own builtin predicates..
 
-builtin( renvar( _, _ ) ) :- !.
+builtin( _, renvar( _, _ ) ) :- !.
 
-builtin( L ) :- is_list( L ), fail, !. % just in case..
+builtin( _, L ) :- is_list( L ), fail, !. % just in case..
 
-builtin( L ) :- user_built( L ). 
+builtin( Ag, L ) :- Ag:user_built( L ). 
 
-builtin( G ) :-   
+builtin( _,  G ) :-   
   predicate_property( G, P ), (P = built_in ; P = interpreted ). % or foreign? 
 
 /*********************************************************** subsume_ineq */

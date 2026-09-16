@@ -69,14 +69,14 @@ print_attr_list([A|R]) :-
     write(A), nl,
     print_attr_list(R).
 
-eval :-
+eval :- % Must be fixed
       current_prolog_flag(argv, Argv),
-      append(_, [--|Args], Argv),
+      append(_, [--|_Args], Argv),
       % concat_atom(Args, ' ', SingleArg),
       % term_to_atom(Term, SingleArg),
       % Args = [Obs, Gin],
-      term_to_atom(ObsT, Obs),
-      term_to_atom(GinT, Gin),
+      % term_to_atom(ObsT, Obs),
+      term_to_atom(GinT, _Gin),
       cycling(GinT), % demo has been invoked
       % Gout = goals( _, AltG ), % write(hola), write(Gout), nl, nl, write(AltG), nl, 
       % format('~w~n', [Gout]),
@@ -133,7 +133,7 @@ demo_gloria(Ag, R1, InGoals, OutGoals ) :-
 % NOT READY
 
 cycling(R, InG) :- 
-	thinking(R, InG, OutG), 
+	thinking(_Ag, R, InG, OutG), 
 	% executing(OutG, NextG),
         executing(OutG, NextG, Examples, Bad_Rules),
         learning(Examples, Bad_Rules), 
@@ -141,7 +141,7 @@ cycling(R, InG) :-
 
  
 step(R, InG, NextG) :- 
-	thinking(R, InG, OutG), 
+	thinking(_Ag, R, InG, OutG), 
         executing(OutG, NextG, _Examples, _Bad_Rules). 
 
 /***************************************************************** ic */
@@ -289,7 +289,7 @@ criticising(Ag, [success(Action)|RA], (success(Action), R), RestExamples, Rules)
 % but, why would the agent want to do that and when?
 %
 % criticising([succeded(Action, Goal)|RA], R, [+Goal|RestExamples], Rules) :-
-criticising(Ag, [succeded(Action, Goal)|RA], (success(Action), R), RestExamples, Rules) :-
+criticising(Ag, [succeded(Action, _Goal)|RA], (success(Action), R), RestExamples, Rules) :-
     saving(Ag, Action :- true),
     criticising(Ag, RA, R, RestExamples, Rules).
 % restoring untried actions. This semantics must be verified
@@ -342,7 +342,7 @@ bg(Ag, X) :-
   % writef("# Gloria: Agent %w is checking background", [Ag]),
   Ag:ghistory(X).
   % writef("\n# Gloria: Agent %w is checking on %w", [Ag, X]).
-bg(Ag, X) :- bg(X). % for backward compatibility. Beware!
+bg(_Ag, X) :- bg(X). % for backward compatibility. Beware!
 bg(Ag, H:-B) :- 
   Ag:def(H, B).
   % writef("#\n Gloria: Agent %w is checking on its def(%w,%w)", [Ag, H, B]).
@@ -454,7 +454,7 @@ act( InGoals0, OutGoals, T, Tf ) :-
       writef("\n# ACT: Succeeded Action %q \n with Inputs %q \n",[ToExecute, Feedback]),
       assimilate( Feedback, NextGoals, NewGoals ) 
     )
-  ; ( NextGoals = [_|PruneGoals],   % cutting off the faulty plan..
+  ; ( NextGoals = PruneGoals,   % cutting off the faulty plan..
       writef("\n# ACT: Failed Action %q \n with Inputs %q \n",[ToExecute, Feedback]),
       assimilate( Feedback, PruneGoals, NewGoals )
     )
@@ -668,7 +668,7 @@ assimilate( (Input, Rest ), InGoals, OutGoals ) :-
 % new constraint. However, a record of the failing action will hardly
 % be used in further reasoning. It has already been dealt with by
 % assimilating (see above or the .main file of the agent). 
-assimilate( (fail(A), Rest ), InGoals, OutGoals ) :-
+assimilate( (fail(_A), Rest ), InGoals, OutGoals ) :-
   % Input = fail( A, T1, T2 ), 
   % add_ic( A, T1, T2, InGoals, NextGoals ), !, 
   assimilate( Rest, InGoals, OutGoals ).
@@ -1158,20 +1158,22 @@ goalsmem(_,_, _, [[true, true, true, [], []]]).
 % module adjusted (first stage)
 
 prolog_agent(Ag, T, R, Obs, Actions) :-
+    format(user_error,'# Gloria steps into cycle ~w:~w~n', [Ag, Obs]),
     retractall(Ag:actionsmem(Ag, _, _, _)),
     retractall(Ag:goalsmem(Ag, _, _)),
     % Ag:goalsmem(Ag, T, [[Abds, Plan, Constraints, HF, HP]|RGs]),
     % ( Constraints = true -> (ic(IC), NewConst = IC, !) ; NewConst = Constraints ),
     % if a reentrant, use previous goals. Otherwise, start it over
-    ( goalsmem(Ag, T, [[Abds, Plan, Constraints, HF, HP]|RGs]) ->
+    ( Ag:goalsmem(Ag, T, [[Abds, Plan, Constraints, HF, HP]|RGs]) ->
     % We decided to clean previous obs, if it necesary
     % context will be provided by the java wrapper
     % if contraints are null, reload IC otherwise carry on
       ( Constraints = true -> 
-          (ic(Ag, IC),  and_append( IC, Contraints, NewConst ), cleaning_previous_obs(Abds,NAbds),!)
+          (ic(Ag, IC),  and_append( IC, Constraints, NewConst ), cleaning_previous_obs(Abds,NAbds),!)
         ; (NewConst = Constraints, cleaning_previous_obs(Abds,NAbds) ) )
     ; ( ic(Ag, IC), and_append( IC, true, NewConst ),
 	NAbds = true, Plan = true, HF = [], HP=[], RGs = [], !) ),
+    format(user_error,'# Gloria has recovered goals ~w:~w~n', [NAbds, Plan]),
     criticising(Ag, Obs, Observations, Examples, Bad_Rules),
     learning(Ag, Examples, Bad_Rules), !,
     % at this point, the agent kb must has been corrected
@@ -1186,10 +1188,13 @@ prolog_agent(Ag, T, R, Obs, Actions) :-
     % the new set of goals must be updated depending on the outcome of actions
     %
     assimilating(Observations, NextGs, NewNextGs),
+    format(user_error,'# Gloria about to think from ~w~n', [NewNextGs]),
     thinking(Ag, R, NewNextGs, OutGs),
+    format(user_error,'# Gloria has thought to ~w~n', [OutGs]),
     record_actions(Ag, T, OutGs),
     record_goals(Ag, T, OutGs),
-    findall(do(Action, T), (Ag:actionsmem(Ag, T, A, P), Action=..[A|P]), Actions).
+    findall(do(Action, T), (Ag:actionsmem(Ag, T, A, P), Action=..[A|P]), Actions),
+    format(user_error,'# Gloria produces outputs ~w:~w~n', [Ag, Actions]).
 
 %prolog_agent(Ag, T, R, Obs, Actions) :-
 %    goalsmem([[Abds, Plan, Constraints, HF, HP]|RGs]),
@@ -1200,7 +1205,7 @@ prolog_agent(Ag, T, R, Obs, Actions) :-
 %    record_actions(Ag, T, OutGs),
 %    record_goals(Ag, T, OutGs).
 
-record_actions(Ag, T, [[Abds, Plan, Constraints, HF, HP]|RGs] ) :-
+record_actions(Ag, T, [[Abds, _Plan, _Constraints, _HF, _HP]|_RGs] ) :-
     % retractall(actionsmem(Ag, _, _, _)),
     record_every_action(Ag, T, Abds).
 
@@ -1233,7 +1238,7 @@ assimilating(Feedback, NextGoals, NewGoals) :-
     % writef("\n ACT: Succeeded Action %q \n with Inputs  \n",[Feedback]),
     assimilate( Feedback, NextGoals, NewGoals ).
 
-assimilating(Feedback, NexGoals, NewGoals) :-
+assimilating(Feedback, NextGoals, NewGoals) :-
     NextGoals = [_|PruneGoals],   % cutting off the faulty plan..
     % writef("\n ACT: Failed Action %q \n with Inputs \n",[Feedback]),
     assimilate( Feedback, PruneGoals, NewGoals ).
@@ -1247,18 +1252,40 @@ cleaning_previous_obs((H,R), (H,RR)) :-
 % crear modulo dado el nombre del agente
 % leer archivo .kb de ese agente
 % lo carga en modulo
-% using AgUD as the agent's module name and
+% using AgID as the agent's module name and
 % using AgType as the agent's kb filename
 
 make_module(AgID, AgType) :-
-	read_file_to_terms(AgType, Terms, []),
-	assert_in_module(Terms, AgID).
+    % 1. Convert string/compound to atom safely if needed
+    to_module_atom(AgID, ModAtom),
+    
+    % 2. Explicitly create the module in SWI-Prolog's module table
+    (   current_module(ModAtom)
+    ->  true
+    ;   add_import_module(ModAtom, user, start) % Inherits basic predicates from 'user'
+    ),
+    
+    read_file_to_terms(AgType, Terms, []),
+    assert_in_module(Terms, ModAtom).
+    
+to_module_atom(Input, Atom) :-
+    (   atom(Input)     -> Atom = Input
+    ;   string(Input)   -> atom_string(Atom, Input)
+    ;   compound(Input) -> Input =.. [Atom|_]
+    ;   term_to_atom(Input, Atom)
+    ).
 
-assert_in_module([],_).
-assert_in_module([T|R], ID) :-
-	assert(ID:T),
-    writef("# Gloria: asserted %w:%w\n",[ID,T]),
-	assert_in_module(R,ID). 
+%make_module(AgID, AgType) :-
+%    format(user_error,'# Gloria makes module for ~w~n', [AgType]),
+%    read_file_to_terms(AgType, Terms, []),
+%    format(user_error,'# Gloria read ~w~w~n', [AgID, Terms]),
+%    assert_in_module(Terms, AgID).
+
+assert_in_module([], _).
+assert_in_module([T|R], Mod) :-
+    assert(Mod:T),
+    format(user_error,'# Gloria asserted ~w:~w~n', [Mod, T]),
+    assert_in_module(R, Mod).
 
 %%% --------------------------------------------- end of file gloria.pl %%%
 

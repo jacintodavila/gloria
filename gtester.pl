@@ -6,17 +6,20 @@
 start_test(AgentName, AgentModule) :-
     atom_concat(AgentName, '.main', MainFile),
     atom_concat(AgentName, '.kb', KBFile),
+    make_module(AgentModule, MainFile), 
+    make_module(AgentModule, KBFile), 
     format('Loading ~w...~n', [AgentName]),
-    (current_predicate(tracefile/1) -> true ; assert(tracefile(_) :- true)),
-    consult(MainFile), consult(KBFile),
-    retractall(current_time(_)), assert(current_time(0)),
+    debug,
+    (current_predicate(AgentModule:tracefile/1) -> true ; asserta(AgentModule:tracefile('dummy.dot') :- true)),
+    % consult(MainFile), consult(KBFile),
+    retractall(AgentModule:current_time(_)), assert(AgentModule:current_time(0)),
     atom_concat(AgentName, '_trace.log', TraceFile),
     setup_call_cleanup(open(TraceFile, write, S),
         (assert(trace_stream(S)), run_loop(AgentModule)),
         (retractall(trace_stream(_)), close(S))).
 
 run_loop(Module) :-
-    current_time(T),
+    Module:current_time(T),
     format('~n--- Time: ~w ---~n', [T]),
     write('Inputs: '),
     read_line_to_string(user_input, InputString),
@@ -25,7 +28,7 @@ run_loop(Module) :-
             (prolog_agent(Module, T, 200, Inputs, Actions),
              (trace_stream(S) -> format(S, 'Time: ~w | Input: ~w | Actions: ~w~n', [T, Inputs, Actions]), flush_output(S) ; true),
              print_actions(Actions),
-             NextT is T + 1, retract(current_time(T)), assert(current_time(NextT)), run_loop(Module)) ;
+             NextT is T + 1, retract(Module:current_time(T)), assert(Module:current_time(NextT)), run_loop(Module)) ;
             (write('Invalid input.'), nl, run_loop(Module)))).
 
 print_actions([]) :- write('  No actions.'), nl.

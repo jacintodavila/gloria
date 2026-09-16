@@ -153,8 +153,8 @@ suitable_for_deletion( ( _ :: _ if ( [] , _) @ _, _ ) ).
 suitable_for_splitting( ( _ :: _ if ( [_|_] , _) @ _, _ ) ). 
 
 suitable_for_further_processing( _, ( _ :: _ if ( G , _) @ _, _ ) ) :-
-  ( unfoldable( G ) 
-  ; builtin( G )
+  ( unfoldable( _Ag, G ) 
+  ; builtin( _Ag, _, G )
   ; G = not(_) 
   ; ( inequality( G ), ground( G ) )
   ; valid_ineq( G ) 
@@ -267,7 +267,7 @@ demo_one_cond(Ag, ExVars, Delta, InImp, OutImp, rule_applied, M, MF, ExVars ) :-
 demo_one_cond(Ag, ExVars, Delta, InImp, OutImp, rule_applied, M, MF, ExVars ) :-
   InImp = ( Cont :: H if (G, Rest) @ HP ), 
   G \= not(_),
-  builtin( G ), !,
+  builtin( Ag, G ), !,
   ( G -> 
     NewImp = ( Cont :: H if Rest @ HP )
   ; NewImp = ( Cont :: H if ([], Rest) @ [] ) ),
@@ -284,15 +284,15 @@ demo_one_cond(Ag, ExVars, Delta, InImp, OutImp, rule_applied, M, MF, ExVars ) :-
 % Unfolding and splitting..
 demo_one_cond(Ag, E, Delta, InImp, OutImp, rule_applied, M, M, E ) :-
   InImp = ( Cont :: H if (G, Rest) @ HP ), 
-  unfoldable( G ), !,
+  unfoldable( Ag, G ), !,
   write_ir(" % -> unfold in CN -> %q \n",[G]),
   definition(Ag, Delta, G, D ),
   ( Cont :: H if (D, Rest) @ HP, true) equiv OutImp.
 
 % inverse multiple propagation..
-demo_one_cond(_, E, Delta, InImp, OutImp, rule_applied, M, MF, NE ) :-
+demo_one_cond(Ag, E, Delta, InImp, OutImp, rule_applied, M, MF, NE ) :-
   InImp = ( _ ::  _ if (G, _) @ _ ),
-  suspendable( G ),
+  suspendable( Ag, G ),
   propagation( Delta, InImp, OutImp, M, MF, NEqV ), !,
   %writef("  % -> Inverse multiple propagation on -> %q \n",[G]),
   %writef("  % -> que produce -> %q \n",[OutImp]),
