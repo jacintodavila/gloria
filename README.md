@@ -87,3 +87,114 @@ Gloria includes a modern React-based web interface.
    ```
 2. Access the interface at `http://localhost:8080`.
 
+## USING Gloria with opencode (MCP)
+Gloria ships an [MCP](https://modelcontextprotocol.io) server so that
+[opencode](https://opencode.ai) (or any other MCP client) can list the example
+agents, inspect them, and run reasoning steps as first-class tools. No changes
+to the Gloria sources are required.
+
+### How it works
+Two files implement the integration:
+
+- `web/mcp/runner.pl` - a long-lived SWI-Prolog worker. It reads one JSON
+  request per line on stdin and writes one JSON reply per line on stdout. For
+  each `run_step` it consults the agent's `.main`/`.kb` into the `user` module
+  (the classic flow from `examples/*/readme.txt`), calls
+  `prolog_agent(Agent, T, 200, Observations, Actions)`, and tracks the time per
+  `(agent, session)`. Reasoning traces (the `# Gloria ...` lines) are written to
+  stderr.
+- `web/mcp/gloria_mcp.py` - a small Python MCP server that spawns and keeps one
+  `swipl` worker, forwards tool calls to it, and exposes four tools.
+
+### Tools
+| Tool | Arguments | Returns |
+| --- | --- | --- |
+| `gloria_list_agents` | - | names of the agents under `examples/` |
+| `gloria_agent_info` | `agent` | description, goals, beliefs, observables, abducibles |
+| `gloria_run_step` | `agent`, `input`, `session` | actions, current/next time, trace |
+| `gloria_reset` | `agent`, `session` | resets the clock so the next step is time 0 |
+
+`input` is a Prolog term list of observations, e.g. `[time_day(am), it_is(sunny)]`.
+Actions are returned as `do(Name, Time)` terms, e.g. `do(shut(east_window),0)`.
+Time advances by one on every `gloria_run_step` for a given
+`(agent, session)`; reuse the same `session` to continue a scenario, or call
+`gloria_reset` to start over at time 0.
+
+### Prerequisites
+- SWI-Prolog on `PATH` (`swipl`).
+- Python 3.10+ with the MCP SDK. Create a virtual environment at the repo root:
+  ```bash
+  python3 -m venv .venv
+  .venv/bin/pip install "mcp[cli]"
+  ```
+  (If you use `uv`: `uv venv .venv && uv pip install --python .venv/bin/python "mcp[cli]"`.)
+
+### Registering the server with opencode
+The repository already contains `opencode.json`:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "gloria": {
+      "type": "local",
+      "command": ["bash", "-c", "cd \"$(git rev-parse --show-toplevel)\" && exec .venv/bin/python web/mcp/gloria_mcp.py"],
+      "cwd": ".",
+      "enabled": true,
+      "timeout": 120000
+    }
+  }
+}
+```
+
+Start opencode from the repository root. The four `gloria_*` tools are then
+available to every agent. If you edit `opencode.json`, the agent/command/skill
+files, **quit and restart opencode** - configuration is only read at startup.
+
+### Agents, command and skills
+- `.opencode/agent/gloria-test.md` - a subagent that drives the `gloria_*`
+  tools and explains the results.
+- `.opencode/command/gloria-test.md` - `/gloria-test [arguments]` runs an agent
+  through the MCP server. With no arguments it runs `enclosure` for two steps.
+- `.opencode/skills/gloria/SKILL.md` - the general model (tools, observations,
+  actions, sessions, traces).
+- `.opencode/skills/gloria-<agent>/SKILL.md` - per-agent references for
+  `enclosure`, `burocratin`, `gerente` and `arch`, each with observables, goals
+  and a known-good sample run.
+
+Example: ask opencode to *"run the enclosure agent with time_day(am) and
+it_is(sunny)"*, or invoke `/gloria-test gerente`.
+
+### Testing the server without opencode
+You can talk to the worker directly, which is handy when debugging:
+
+```bash
+printf '%s\n' \
+  '{"cmd":"list_agents"}' \
+  '{"cmd":"run_step","agent":"enclosure","session":"s","input":"[time_day(am), it_is(sunny)]"}' \
+  '{"cmd":"quit"}' \
+  | swipl -q -s web/mcp/runner.pl -g main -t halt
+```
+
+Note the `-g main -t halt`: the runner defines its own `main/0`, and `gloria.pl`
+also defines `main/0`, so the runner must **not** be started with a `:- main.`
+directive inside the file.
+
+### Adding your own agent
+Create `examples/<name>/<name>.main` and `examples/<name>/<name>.kb` (or
+`ex-<name>.*`). The runner finds them automatically, declares the agent's
+predicates `dynamic` before consulting, and unloads the previous agent when you
+switch. `gloria_list_agents`, `gloria_agent_info` and `gloria_run_step` pick the
+new agent up with no configuration change.
+
+### Troubleshooting
+- **`is swipl on PATH?`** - the MCP server could not start the Prolog worker.
+  Install SWI-Prolog and confirm `swipl --version` works.
+- **`agent produced no result`** - the observed input did not satisfy any goal.
+  Call `gloria_agent_info` (or read the agent's skill) for its observables and
+  use a matching observation.
+- **`taquilla`** is listed but is a Galatea simulation specification, not a
+  single runnable `prolog_agent`; `gloria_run_step` is not meaningful for it.
+- Loading warnings such as *Singleton variables* are normal; they appear at the
+  start of a step's trace.
+
