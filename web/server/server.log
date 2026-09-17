@@ -1,0 +1,74 @@
+% Started server at http://localhost:8080/
+Server running on port 8080
+# Gloria asserted enclosure:tracefile(enclosure.dot)
+# Gloria asserted enclosure:for_testing_only(false)
+# Gloria asserted enclosure:abd(shut)
+# Gloria asserted enclosure:abd(open)
+# Gloria asserted enclosure:abd(time_day)
+# Gloria asserted enclosure:abd(it_is)
+# Gloria asserted enclosure:observable(time_day(_24452))
+# Gloria asserted enclosure:observable(it_is(_24468))
+# Gloria asserted enclosure:user_built(existe(_24484))
+# Gloria asserted enclosure:if_((time_day(_25042),it_is(_25046)),[adjust_home(_25042,_25046)])
+# Gloria asserted enclosure:def(adjust_home(am,sunny),(shut(east_window),open(doors)))
+# Gloria asserted enclosure:def(adjust_home(pm,sunny),(shut(west_window),open(doors)))
+# Gloria asserted enclosure:def(adjust_home(_25154,rainy),(shut(east_window),shut(west_window),shut(doors)))
+# Gloria steps into cycle enclosure:[time_day(am),it_is(sunny)]
+# Gloria has recovered goals true:true
+# Gloria about to think from [[(todo(see,it_is(sunny)),todo(see,time_day(am)),true),true,(c(p,true)::[(adjust_home(_5432,_5434),true)]if(time_day(_5432),it_is(_5434),true)@[],true),[],[]]]
+# Gloria has thought to [[(todo(see,it_is(sunny)),todo(see,time_day(am)),todo(adjust_home(am,sunny),shut(east_window)),todo(adjust_home(am,sunny),open(doors)),true),true,(c(p,true)::[(adjust_home(am,_5434),true)]if(it_is(_5434),true)@[it_is(_5434),_5434 eq sunny],c(p,true)::[(adjust_home(_5432,_5434),true)]if(time_day(_5432),it_is(_5434),true)@[time_day(_5432),_5432 eq am],true),[],[]]]
+# Gloria produces outputs enclosure:[do(shut(east_window),0),do(open(doors),0)]
+# Gloria asserted enclosure:tracefile(enclosure.dot)
+# Gloria asserted enclosure:for_testing_only(false)
+# Gloria asserted enclosure:abd(shut)
+# Gloria asserted enclosure:abd(open)
+# Gloria asserted enclosure:abd(time_day)
+# Gloria asserted enclosure:abd(it_is)
+# Gloria asserted enclosure:observable(time_day(_5466))
+# Gloria asserted enclosure:observable(it_is(_5482))
+# Gloria asserted enclosure:user_built(existe(_5498))
+# Gloria asserted enclosure:if_((time_day(_6056),it_is(_6060)),[adjust_home(_6056,_6060)])
+# Gloria asserted enclosure:def(adjust_home(am,sunny),(shut(east_window),open(doors)))
+# Gloria asserted enclosure:def(adjust_home(pm,sunny),(shut(west_window),open(doors)))
+# Gloria asserted enclosure:def(adjust_home(_6168,rainy),(shut(east_window),shut(west_window),shut(doors)))
+# Gloria steps into cycle enclosure:[time_day(am),it_is(sunny)]
+# Gloria has recovered goals true:true
+# Gloria about to think from [[(todo(see,it_is(sunny)),todo(see,time_day(am)),true),true,(c(p,true)::[(adjust_home(_5396,_5398),true)]if(time_day(_5396),it_is(_5398),true)@[],true),[],[]]]
+# Gloria has thought to [[(todo(see,it_is(sunny)),todo(see,time_day(am)),todo(adjust_home(am,sunny),shut(east_window)),todo(adjust_home(am,sunny),open(doors)),true),true,(c(p,true)::[(adjust_home(am,_5398),true)]if(it_is(_5398),true)@[it_is(_5398),_5398 eq sunny],c(p,true)::[(adjust_home(_5396,_5398),true)]if(time_day(_5396),it_is(_5398),true)@[time_day(_5396),_5396 eq am],true),[],[]]]
+# Gloria produces outputs enclosure:[do(shut(east_window),0),do(open(doors),0)]
+# Gloria asserted enclosure:tracefile(enclosure.dot)
+# Gloria asserted enclosure:for_testing_only(false)
+# Gloria asserted enclosure:abd(shut)
+# Gloria asserted enclosure:abd(open)
+# Gloria asserted enclosure:abd(time_day)
+# Gloria asserted enclosure:abd(it_is)
+# Gloria asserted enclosure:observable(time_day(_5430))
+# Gloria asserted enclosure:observable(it_is(_5446))
+# Gloria asserted enclosure:user_built(existe(_5462))
+# Gloria asserted enclosure:if_((time_day(_6020),it_is(_6024)),[adjust_home(_6020,_6024)])
+# Gloria asserted enclosure:def(adjust_home(am,sunny),(shut(east_window),open(doors)))
+# Gloria asserted enclosure:def(adjust_home(pm,sunny),(shut(west_window),open(doors)))
+# Gloria asserted enclosure:def(adjust_home(_6132,rainy),(shut(east_window),shut(west_window),shut(doors)))
+# Gloria steps into cycle enclosure:[time_day(am),it_is(sunny)]
+# Gloria has recovered goals true:true
+# Gloria about to think from [[(todo(see,it_is(sunny)),todo(see,time_day(am)),true),true,(c(p,true)::[(adjust_home(_4266,_4268),true)]if(time_day(_4266),it_is(_4268),true)@[],true),[],[]]]
+# Gloria has thought to [[(todo(see,it_is(sunny)),todo(see,time_day(am)),todo(adjust_home(am,sunny),shut(east_window)),todo(adjust_home(am,sunny),open(doors)),true),true,(c(p,true)::[(adjust_home(am,_4268),true)]if(it_is(_4268),true)@[it_is(_4268),_4268 eq sunny],c(p,true)::[(adjust_home(_4266,_4268),true)]if(time_day(_4266),it_is(_4268),true)@[time_day(_4266),_4266 eq am],true),[],[]]]
+# Gloria produces outputs enclosure:[do(shut(east_window),0),do(open(doors),0)]
+# Gloria asserted enclosure:tracefile(enclosure.dot)
+# Gloria asserted enclosure:for_testing_only(false)
+# Gloria asserted enclosure:abd(shut)
+# Gloria asserted enclosure:abd(open)
+# Gloria asserted enclosure:abd(time_day)
+# Gloria asserted enclosure:abd(it_is)
+# Gloria asserted enclosure:observable(time_day(_10502))
+# Gloria asserted enclosure:observable(it_is(_10518))
+# Gloria asserted enclosure:user_built(existe(_10534))
+# Gloria asserted enclosure:if_((time_day(_11092),it_is(_11096)),[adjust_home(_11092,_11096)])
+# Gloria asserted enclosure:def(adjust_home(am,sunny),(shut(east_window),open(doors)))
+# Gloria asserted enclosure:def(adjust_home(pm,sunny),(shut(west_window),open(doors)))
+# Gloria asserted enclosure:def(adjust_home(_11204,rainy),(shut(east_window),shut(west_window),shut(doors)))
+# Gloria steps into cycle enclosure:[time_day(am),it_is(sunny)]
+# Gloria has recovered goals true:true
+# Gloria about to think from [[(todo(see,it_is(sunny)),todo(see,time_day(am)),true),true,(c(p,true)::[(adjust_home(_10466,_10468),true)]if(time_day(_10466),it_is(_10468),true)@[],true),[],[]]]
+# Gloria has thought to [[(todo(see,it_is(sunny)),todo(see,time_day(am)),todo(adjust_home(am,sunny),shut(east_window)),todo(adjust_home(am,sunny),open(doors)),true),true,(c(p,true)::[(adjust_home(am,_10468),true)]if(it_is(_10468),true)@[it_is(_10468),_10468 eq sunny],c(p,true)::[(adjust_home(_10466,_10468),true)]if(time_day(_10466),it_is(_10468),true)@[time_day(_10466),_10466 eq am],true),[],[]]]
+# Gloria produces outputs enclosure:[do(shut(east_window),0),do(open(doors),0)]

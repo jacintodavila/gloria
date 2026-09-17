@@ -57,4 +57,8 @@ post_step_session(Request) :-
     retract(current_session_time(T)),
     assert(current_session_time(NextT)),
     
-    reply_json_dict(json{actions: Actions, next_time: NextT}).
+    maplist(action_to_string, Actions, ActionsStr),
+    reply_json_dict(json{actions: ActionsStr, next_time: NextT}).
+
+action_to_string(do(Name, Time), String) :-
+    with_output_to(string(String), writeq(do(Name, Time))).

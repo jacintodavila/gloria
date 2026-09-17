@@ -21,7 +21,7 @@ function App() {
 
   const runStep = () => {
     axios.post('/api/session/step', { input: input }).then(res => {
-      setActions(prev => [...prev, ...res.data.actions])
+      setActions(res.data.actions)
       setInput('')
     })
   }

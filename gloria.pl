@@ -1159,8 +1159,8 @@ goalsmem(_,_, _, [[true, true, true, [], []]]).
 
 prolog_agent(Ag, T, R, Obs, Actions) :-
     format(user_error,'# Gloria steps into cycle ~w:~w~n', [Ag, Obs]),
-    retractall(Ag:actionsmem(Ag, _, _, _)),
-    retractall(Ag:goalsmem(Ag, _, _)),
+    retractall(Ag:actionsmem(_, _, _, _)),
+    retractall(Ag:goalsmem(_, _, _)),
     % Ag:goalsmem(Ag, T, [[Abds, Plan, Constraints, HF, HP]|RGs]),
     % ( Constraints = true -> (ic(IC), NewConst = IC, !) ; NewConst = Constraints ),
     % if a reentrant, use previous goals. Otherwise, start it over
@@ -1205,6 +1205,7 @@ prolog_agent(Ag, T, R, Obs, Actions) :-
 %    record_actions(Ag, T, OutGs),
 %    record_goals(Ag, T, OutGs).
 
+record_actions(_, _, []).
 record_actions(Ag, T, [[Abds, _Plan, _Constraints, _HF, _HP]|_RGs] ) :-
     % retractall(actionsmem(Ag, _, _, _)),
     record_every_action(Ag, T, Abds).
@@ -1266,6 +1267,7 @@ make_module(AgID, AgType) :-
     ),
     
     read_file_to_terms(AgType, Terms, []),
+    retract_loaded(ModAtom, Terms),
     assert_in_module(Terms, ModAtom).
     
 to_module_atom(Input, Atom) :-
@@ -1286,6 +1288,22 @@ assert_in_module([T|R], Mod) :-
     assert(Mod:T),
     format(user_error,'# Gloria asserted ~w:~w~n', [Mod, T]),
     assert_in_module(R, Mod).
+
+% Before (re)loading a file, clean the clauses previously loaded into the
+% agent module for each predicate that appears in the file (its functor/
+% arity). This makes repeated make_module/2 calls idempotent, so restarting
+% a session does not accumulate duplicate facts (e.g., if_/2, def/2).
+retract_loaded(_, []).
+retract_loaded(Mod, [T|R]) :-
+    functor_head(T, Name, Arity),
+    functor(Pattern, Name, Arity),
+    retractall(Mod:Pattern),
+    retract_loaded(Mod, R).
+
+functor_head((Head :- _), Name, Arity) :- !,
+    functor(Head, Name, Arity).
+functor_head(T, Name, Arity) :-
+    functor(T, Name, Arity).
 
 %%% --------------------------------------------- end of file gloria.pl %%%
 
