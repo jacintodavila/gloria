@@ -9,10 +9,10 @@
 % :- ['../../flach/mis.pl'].   %learning library. 
 
 % This must be include to use gloria and its reasoning engine
-:- ['../../gloria.pl']. 
+%:- ['../../gloria.pl']. 
 
 % the agent's knowledge base
-:- ['ex-burocratin.kb']. 
+%:- ['ex-burocratin.kb']. 
 
 :- dynamic ghistory/1.  % the background changes.
 

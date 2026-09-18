@@ -72,3 +72,32 @@ Server running on port 8080
 # Gloria about to think from [[(todo(see,it_is(sunny)),todo(see,time_day(am)),true),true,(c(p,true)::[(adjust_home(_10466,_10468),true)]if(time_day(_10466),it_is(_10468),true)@[],true),[],[]]]
 # Gloria has thought to [[(todo(see,it_is(sunny)),todo(see,time_day(am)),todo(adjust_home(am,sunny),shut(east_window)),todo(adjust_home(am,sunny),open(doors)),true),true,(c(p,true)::[(adjust_home(am,_10468),true)]if(it_is(_10468),true)@[it_is(_10468),_10468 eq sunny],c(p,true)::[(adjust_home(_10466,_10468),true)]if(time_day(_10466),it_is(_10468),true)@[time_day(_10466),_10466 eq am],true),[],[]]]
 # Gloria produces outputs enclosure:[do(shut(east_window),0),do(open(doors),0)]
+# Gloria asserted burocratin::-encoding(utf8)
+# Gloria asserted burocratin::-[../../gloria.pl]
+# Gloria asserted burocratin::-[ex-burocratin.kb]
+# Gloria asserted burocratin::-dynamic ghistory/1
+# Gloria asserted burocratin:tracefile(ex-burocratin.dot)
+# Gloria asserted burocratin:for_testing_only(false)
+# Gloria asserted burocratin:abd(me_pide)
+# Gloria asserted burocratin:abd(lee)
+# Gloria asserted burocratin:observable(me_pide(_10564,_10566))
+# Gloria asserted burocratin:user_built(existe(_10582))
+# Gloria asserted burocratin:existe(sacar_constancia)
+# Gloria asserted burocratin:existe(reporte)
+# Gloria asserted burocratin:buri:-cycling(1000,[[true,true,true,[],[]]])
+# Gloria asserted burocratin:if_(me_pide(_11356,_11358),[sigo_procedimiento(_11358,_11356)])
+# Gloria asserted burocratin:if_((me_pide(_11392,_11394),muy_importante(_11394)),[resuelvo(inmediatamente,_11394,_11392)])
+# Gloria asserted burocratin:def(sigo_procedimiento(_11438,_11440),consulto_manual(_11438))
+# Gloria asserted burocratin:def(sigo_procedimiento(_11462,_11464),invento_manual(_11468,_11464))
+# Gloria asserted burocratin:def(consulto_manual(_11488),(existe(_11488),lee(_11488)))
+# Gloria asserted burocratin:def(invento_manual(_11520,_11522),(pida_carta_autoridad,resuelvo(lentamente,_11520,_11522)))
+# Gloria asserted burocratin:def(muy_importante(_11554),aparece_en_la_ley(_11554))
+# Gloria steps into cycle burocratin:[me_pide(jacinto,sacar_constancia)]
+# Gloria has recovered goals true:true
+# Gloria about to think from [[(todo(see,me_pide(jacinto,sacar_constancia)),true),true,(c(p,true)::[(sigo_procedimiento(_10596,_10598),true)]if(me_pide(_10598,_10596),true)@[],c(p,true)::[(resuelvo(inmediatamente,_10526,_10528),true)]if(me_pide(_10528,_10526),muy_importante(_10526),true)@[],true),[],[]]]
+# Gloria steps into cycle burocratin:[me_pide(jacinto,sacar_constancia)]
+# Gloria has recovered goals true:true
+# Gloria about to think from [[(todo(see,me_pide(jacinto,sacar_constancia)),true),true,(c(p,true)::[(sigo_procedimiento(_10596,_10598),true)]if(me_pide(_10598,_10596),true)@[],c(p,true)::[(resuelvo(inmediatamente,_10526,_10528),true)]if(me_pide(_10528,_10526),muy_importante(_10526),true)@[],true),[],[]]]
+# Gloria steps into cycle burocratin:[me_pide(jacinto,sacar_constancia)]
+# Gloria has recovered goals true:true
+# Gloria about to think from [[(todo(see,me_pide(jacinto,sacar_constancia)),true),true,(c(p,true)::[(sigo_procedimiento(_10588,_10590),true)]if(me_pide(_10590,_10588),true)@[],c(p,true)::[(resuelvo(inmediatamente,_10518,_10520),true)]if(me_pide(_10520,_10518),muy_importante(_10518),true)@[],true),[],[]]]
