@@ -29,14 +29,11 @@
 */
 
 /********************************************************* submodules */
-% the rest of the Gloria system must be in the same directory
-
-:- [auxilia].      % Support predicates
-:- [equiva].       % Term equivalence relations and case analysis
-:- [rewrite].      % Re-write rules for equality and inequalities
-:- [implica].      % Implications processing engine
-:- [rplan].        % main processing engine (r stands for reactive)
-:- ['flach/mis.pl']. % invoking Shapiro's MIS (based on an implem. by Flach). 
+% In the Ciao port the following files are included into this module
+% by src/gloria.pl (which also provides the Ciao compat layer):
+%   gloria_compat, auxilia, equiva, rewrite, implica, rplan.
+% The MIS learner (flach/mis.pl) is stubbed via induce_spec/4 in
+% gloria_compat.pl until a later WP.
 
 % :- op(1100,fy,'if').            %if tal cosa.
 % :- op(1200,xfy,'then').         %if tal cosa then tal cosa.
@@ -49,7 +46,9 @@
 % :- dynamic on/1, at/1, on/2, at/2, endfile/0, nonstop/0, def/2, if/2,
 % 	   now/1, toldtostop/0, lastaction/1, do/3, bg/1.
 
-:- dynamic def/2, if/2, goalsmem/3, actionsmem/4.
+/* Reified agent DB (Ciao port): the agent id is the first argument. */
+:- dynamic def/3, if_/3, observable/2, abd/2, user_built/2, for_testing_only/2.
+:- dynamic actionsmem/4, goalsmem/3, ghistory/2.
 
 %
 % Warning:
@@ -61,41 +60,7 @@
 
 /************************************************************* main */
 % to invoke the agent as a standalone program or in batch job
-% NOT READY
-
-print_attr_list([]).
-
-print_attr_list([A|R]) :-
-    write(A), nl,
-    print_attr_list(R).
-
-eval :- % Must be fixed
-      current_prolog_flag(argv, Argv),
-      append(_, [--|_Args], Argv),
-      % concat_atom(Args, ' ', SingleArg),
-      % term_to_atom(Term, SingleArg),
-      % Args = [Obs, Gin],
-      % term_to_atom(ObsT, Obs),
-      term_to_atom(GinT, _Gin),
-      cycling(GinT), % demo has been invoked
-      % Gout = goals( _, AltG ), % write(hola), write(Gout), nl, nl, write(AltG), nl, 
-      % format('~w~n', [Gout]),
-      % format('~w~n', [AltG]), 
-      % escribe_influencias(Influences).
-      % print_attr_list(Influences).
-
-escribe_influencias([]).
-escribe_influencias([I|R]) :- I =.. [Nombre|Args], format('~w', [Nombre]), escribe_lista(Args), nl, escribe_influencias(R). 
-
-escribe_lista([]).
-escribe_lista([X|R]) :- escribe_lista(X), escribe_lista(R), !.
-escribe_lista([X|R]) :- format(' ~w', [X]), escribe_lista(R). 
-
-main :-
-        catch(eval, E, (print_message(error, E), fail)),
-        halt.
-main :-
-        halt(1).
+% NOT READY. The Ciao batch driver lives in gloria_loader.pl.
 
 /************************************************************* gcompile */
 % to parse the original source code of the agent beliefs to
@@ -148,7 +113,7 @@ step(R, InG, NextG) :-
 % module adjusted
 ic(Ag, Restricciones) :- % revisar el formato de las reglas
         findall( ( c(p,true) ::  [HHead] if BBody @ []),  
-                 ( Ag:if_(Body, Head), arregla(Body, BBody), aplana(Head, HHead)), L ),
+                 ( if_(Ag, Body, Head), arregla(Body, BBody), aplana(Head, HHead)), L ),
         aplana(L, Restricciones). 
 
 % obs(L) :-
@@ -173,7 +138,7 @@ definition(Ag,  _, G, Def ) :-
   createscheme(G, NG),
   % findall( (NG, B), (para NG haga B), L ),
   % findall( (NG, true), (asuma NG), LF), 
-  findall( (NG, B), Ag:def(NG, B), L),
+  findall( (NG, B), def(Ag, NG, B), L),
   %% this invokes the database of definitions created by gcompile
   % append(L, LF, LL),
   attach_eq( G, L, Def ).
@@ -268,7 +233,7 @@ testing((todo(Goal, Do), Rest), Feedback) :-
 
 criticising(_, [], true, [], []).
 criticising(Ag, [failed(Action, Goal)|RestActs], (fail(Action),R), [-Goal|RestExamples], New_Rules) :-
-    saving(Ag, Action :- true), % The action attempted, the goal failed approach
+    saving(Ag, (Action :- true)), % The action attempted, the goal failed approach
     % I will not use the db for other than these abducibles in the
     % background theory for learning
     % get the Rules for the definition of this Goal
@@ -290,11 +255,11 @@ criticising(Ag, [success(Action)|RA], (success(Action), R), RestExamples, Rules)
 %
 % criticising([succeded(Action, Goal)|RA], R, [+Goal|RestExamples], Rules) :-
 criticising(Ag, [succeded(Action, _Goal)|RA], (success(Action), R), RestExamples, Rules) :-
-    saving(Ag, Action :- true),
+    saving(Ag, (Action :- true)),
     criticising(Ag, RA, R, RestExamples, Rules).
 % restoring untried actions. This semantics must be verified
 criticising(Ag, [suspended(Action, Goal)|RA], (todo(Goal, Action), R), RestExamples, Rules) :-
-    saving(Ag, Action :- true),
+    saving(Ag, (Action :- true)),
     criticising(Ag, RA, R, RestExamples, Rules).
 criticising(Ag, [Obs|RA], RObs, Examples, Rules) :-
     ( Obs = regoal ; Obs = clearobs ), !, 
@@ -303,17 +268,17 @@ criticising(Ag, [Obs|RA], (todo(see, Obs), RObs), Examples, Rules) :-
     criticising(Ag, RA, RObs, Examples, Rules).
 
 % must think about bounded storage and garbage collection here!. 
-saving(Ag, A) :- !, side_of_storage(Ag, N), ((N < 100, assertz(Ag:ghistory(A)),
+saving(Ag, A) :- !, side_of_storage(Ag, N), ((N < 100, assertz(ghistory(Ag, A)),
   writef("\n# Gloria: guardando %w in agent %w\n",[A,Ag])) ; true ).
 
-side_of_storage(Ag, N) :- findall(A, Ag:ghistory(A), L), !, length(L,N).
+side_of_storage(Ag, N) :- findall(A, ghistory(Ag, A), L), !, length(L,N).
 
 get_rules_for(Ag, Goal, Rules) :-
     createscheme(Goal, NG),
-    findall( NG :- B, Ag:def(NG, B), Rules),
+    findall((NG :- B), def(Ag, NG, B), Rules),
     writef("\n# Gloria: rules of agent %w\n",[Ag]),
     revising(Rules), 
-    retractall(Ag:def(NG, _)). % clear this goal's clauses from the KB.
+    retractall(def(Ag, NG, _)). % clear this goal's clauses from the KB.
 
 revising([]).
 revising([(H:- B)|Rest]) :-  
@@ -332,7 +297,7 @@ learning(Ag, Examples, Rules) :-
 assertall(_, []).
 % assertall(Ag, [Clause|R]) :- assertz(Ag, Clause), assertall(Ag, R).
 assertall(Ag, [(H:-B)|R]) :- 
-    assertz(Ag:def(H,B)),
+    assertz(def(Ag,H,B)),
     writef("# Gloria: newly learnt rule -> %w : to %w do %w.\n",[Ag,H,B]),
     assertall(Ag, R).
 
@@ -340,28 +305,47 @@ assertall(Ag, [(H:-B)|R]) :-
 /* lastest additions to allow for agents */
 bg(Ag, X) :-
   % writef("# Gloria: Agent %w is checking background", [Ag]),
-  Ag:ghistory(X).
+  ghistory(Ag, X).
   % writef("\n# Gloria: Agent %w is checking on %w", [Ag, X]).
 bg(_Ag, X) :- bg(X). % for backward compatibility. Beware!
-bg(Ag, H:-B) :- 
-  Ag:def(H, B).
+bg(Ag, (H:-B)) :- 
+  def(Ag, H, B).
   % writef("#\n Gloria: Agent %w is checking on its def(%w,%w)", [Ag, H, B]).
   % to use Ag's rules as background knowledge
 
 
 /******************************************************** old methods */
 /************************************************************* gloria */
+% The old demo entry points below assert into ic/2 and run an
+% interactive cycle. They are out of the Ciao port's scope for WP0
+% and were deactivated to keep the module purely declarative.
+%
+% gloria( R, M, IC ) :-
+%   assert(ic(IC, M)),
+%   Goals0 = [[true, true, IC, [], M]],
+%   cycle( R, Goals0, 0).
+%
+% set_time( T ) :- 
+%   (retractall(now(_)) ; true ),
+%   assert(now(T)).
 
-gloria( R, M, IC ) :-
-  % create_sem,
-  assert(ic(IC, M)),
-  Goals0 = [[true, true, IC, [], M]],
-  cycle( R, Goals0, 0).
-  % destroy_sem.
+/*************************************************** Ciao port: legacy stubs */
+% The interactive demo machinery (cycling/2, executing/4, cycle/3, act/4,
+% and friends) references fragments that were never completed in the
+% original sources and are never reached by prolog_agent/gloria_step.
+% SWI only fails on undefined predicates at runtime, so these compiled;
+% Ciao requires definitions at load time.  The stubs below fail, which is
+% exactly what happens when the corresponding code is never executed.
+% They exist solely to keep the legacy clauses compiling.
 
-set_time( T ) :- 
-  (retractall(now(_)) ; true ),
-  assert(now(T)).
+set_time( _ ) :- fail.
+ic( _ ) :- fail.
+criticising(_, _, _, _) :- fail.
+learning( _, _ ) :- fail.
+no_all_vars_unused( _, _ ) :- fail.
+bg( _ ) :- fail.
+trace :- fail.
+demo_gloria(_, _, _) :- fail.   % legacy 3-arg variant used only by cycle/3
 
 /*************************************************************** cycle */
 %
@@ -1136,8 +1120,9 @@ ord_res( N ) :-
 
 
 /*********************************************** interface to Galatea */
-
-goalsmem(_,_, _, [[true, true, true, [], []]]).
+% The original dead clause goalsmem/4 ([[true,true,true,[],[]]]) was a
+% placeholder for the Galatea interface and conflicted with the dynamic
+% goalsmem/3 used by prolog_agent. It is not ported.
 
 /************************************************************* prolog_agent */
 % this is the predicate to invoke que agent-s reasoning engine
@@ -1156,18 +1141,19 @@ goalsmem(_,_, _, [[true, true, true, [], []]]).
 %
 %
 % module adjusted (first stage)
+% Ciao port: agent identity is reified, so Ag:actionsmem/4 etc. become
+% plain calls keyed by the first argument. gloria_step/7 additionally
+% exposes NextGs/OutGs for debugging and the SWI<->Ciao parity harness.
 
 prolog_agent(Ag, T, R, Obs, Actions) :-
     gloria_step(Ag, T, R, Obs, _NextGs, _OutGs, Actions).
 
 gloria_step(Ag, T, R, Obs, NextGs, OutGs, Actions) :-
     format(user_error,'# Gloria steps into cycle ~w:~w~n', [Ag, Obs]),
-    retractall(Ag:actionsmem(_, _, _, _)),
-    retractall(Ag:goalsmem(_, _, _)),
-    % Ag:goalsmem(Ag, T, [[Abds, Plan, Constraints, HF, HP]|RGs]),
-    % ( Constraints = true -> (ic(IC), NewConst = IC, !) ; NewConst = Constraints ),
+    retractall(actionsmem(Ag, _, _, _)),
+    retractall(goalsmem(Ag, _, _)),
     % if a reentrant, use previous goals. Otherwise, start it over
-    ( Ag:goalsmem(Ag, T, [[Abds, Plan, Constraints, HF, HP]|RGs]) ->
+    ( goalsmem(Ag, T, [[Abds, Plan, Constraints, HF, HP]|RGs]) ->
     % We decided to clean previous obs, if it necesary
     % context will be provided by the java wrapper
     % if contraints are null, reload IC otherwise carry on
@@ -1186,8 +1172,6 @@ gloria_step(Ag, T, R, Obs, NextGs, OutGs, Actions) :-
     %
     NextGs = [[NAbds, Plan, NewConst, HF, HP]|RGs],
     %
-    % writeq(NextGs), nl,
-    % something is missing here
     % the new set of goals must be updated depending on the outcome of actions
     %
     assimilating(Observations, NextGs, NewNextGs),
@@ -1196,7 +1180,7 @@ gloria_step(Ag, T, R, Obs, NextGs, OutGs, Actions) :-
     format(user_error,'# Gloria has thought to ~w~n', [OutGs]),
     record_actions(Ag, T, OutGs),
     record_goals(Ag, T, OutGs),
-    findall(do(Action, T), (Ag:actionsmem(Ag, T, A, P), Action=..[A|P]), Actions),
+    findall(do(Action, T), (actionsmem(Ag, T, A, P), Action=..[A|P]), Actions),
     format(user_error,'# Gloria produces outputs ~w:~w~n', [Ag, Actions]).
 
 %prolog_agent(Ag, T, R, Obs, Actions) :-
@@ -1218,7 +1202,7 @@ record_every_action(Ag, T, (todo(see,_), Rest)) :- !, % skip observations
     record_every_action(Ag, T, Rest).
 record_every_action(Ag, T, (todo(_,Action), Rest)) :-
     prepare_action(Ag, T, Action, PreparedAction),
-    assert(Ag:PreparedAction),
+    assert(PreparedAction),
     record_every_action(Ag, T, Rest).
 
 
@@ -1235,7 +1219,7 @@ prepare_action(Ag, T, Action, actionsmem(Ag, T, Name, Parameters)) :-
 
 
 record_goals(Ag, T, G) :- % retractall(goalsmem(Ag, _, _)),
-    assert(Ag:goalsmem(Ag, T, G)), !.
+    assert(goalsmem(Ag, T, G)), !.
 
 assimilating(Feedback, NextGoals, NewGoals) :-
     succeeded( Feedback ), !,
@@ -1258,55 +1242,12 @@ cleaning_previous_obs((H,R), (H,RR)) :-
 % lo carga en modulo
 % using AgID as the agent's module name and
 % using AgType as the agent's kb filename
-
-make_module(AgID, AgType) :-
-    % 1. Convert string/compound to atom safely if needed
-    to_module_atom(AgID, ModAtom),
-    
-    % 2. Explicitly create the module in SWI-Prolog's module table
-    (   current_module(ModAtom)
-    ->  true
-    ;   add_import_module(ModAtom, user, start) % Inherits basic predicates from 'user'
-    ),
-    
-    read_file_to_terms(AgType, Terms, []),
-    retract_loaded(ModAtom, Terms),
-    assert_in_module(Terms, ModAtom).
-    
-to_module_atom(Input, Atom) :-
-    (   atom(Input)     -> Atom = Input
-    ;   string(Input)   -> atom_string(Atom, Input)
-    ;   compound(Input) -> Input =.. [Atom|_]
-    ;   term_to_atom(Input, Atom)
-    ).
-
-%make_module(AgID, AgType) :-
-%    format(user_error,'# Gloria makes module for ~w~n', [AgType]),
-%    read_file_to_terms(AgType, Terms, []),
-%    format(user_error,'# Gloria read ~w~w~n', [AgID, Terms]),
-%    assert_in_module(Terms, AgID).
-
-assert_in_module([], _).
-assert_in_module([T|R], Mod) :-
-    assert(Mod:T),
-    format(user_error,'# Gloria asserted ~w:~w~n', [Mod, T]),
-    assert_in_module(R, Mod).
-
-% Before (re)loading a file, clean the clauses previously loaded into the
-% agent module for each predicate that appears in the file (its functor/
-% arity). This makes repeated make_module/2 calls idempotent, so restarting
-% a session does not accumulate duplicate facts (e.g., if_/2, def/2).
-retract_loaded(_, []).
-retract_loaded(Mod, [T|R]) :-
-    functor_head(T, Name, Arity),
-    functor(Pattern, Name, Arity),
-    retractall(Mod:Pattern),
-    retract_loaded(Mod, R).
-
-functor_head((Head :- _), Name, Arity) :- !,
-    functor(Head, Name, Arity).
-functor_head(T, Name, Arity) :-
-    functor(T, Name, Arity).
+%
+% The SWI-only make_module/2 (current_module, add_import_module,
+% read_file_to_terms, assert_in_module) is replaced in the Ciao port by
+% load_agent/2 in gloria_loader.pl, which reads a .kb/.main file and
+% asserts the reified def/3, if_/3, abd/2, observable/2, user_built/2
+% and for_testing_only/2 facts for the given agent id.
 
 %%% --------------------------------------------- end of file gloria.pl %%%
 

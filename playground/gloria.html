@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Playground for Gloria reactive agents</title>
+  <script src="ciao-wasm.js"></script>
+</head>
+<body>
+  <div id="gloria-root"></div>
+  <script>
+    // Configuration for the Gloria playground
+    window.playgroundCfg = {
+      title: "playground for Gloria reactive agents",
+      window_layout: ['E','T','P'],
+      storage_key: 'code_gloria',
+      splash_code: `:- load_agent(gloria, 'examples/enclosure/enclosure.kb').
+:- glory_step(enclosure, 0, 400, [time_day(am), it_is(sunny)], _, _, [do(shut(east_window),0), do(open(doors),0)]).
+:- glory_step(enclosure, 1, 400, [time_day(pm), it_is(rainy)], _, _, [do(shut(east_window),1), do(shut(west_window),1), do(shut(doors),1)]).`,
+      example_list: [
+        {name: "Enclosure (windows/doors)", dir: "enclosure"},
+        {name: "Burocratin (procedures)", dir: "burocratin"},
+        {name: "Gerente (queue manager)", dir: "gerente"},
+        {name: "Arch (abduction example)", dir: "arch"},
+      ],
+      has_run_tests_button: true,
+      has_doc_button: true,
+    };
+
+    window.toplevelCfg = {
+      special_query: { "load": { read_code: true } },
+      init_bundles: ['ciaowasm', 'core', 'builder', 'gloria'],
+      init_queries: [
+        'use_module(library(classic/classic_predicates))',
+        'use_module(library(gloria/gloria))'
+      ],
+      custom_load_query: m => "gloria:load_agent_code('" + m + "')",
+      custom_run_query:  q => "gloria:step_query(" + q + ")",
+      custom_postprint_sol: async (pg) => {
+        // Read the draft.html from the VFS and render the trace
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'draft.html', true);
+        xhr.onreadystatechange = () => {
+          if (xhr.readyState === 4 && xhr.status === 200) {
+            const traceDiv = document.getElementById('trace-preview');
+            if (traceDiv) traceDiv.innerHTML = xhr.responseText;
+          }
+        };
+        xhr.send();
+      }
+    };
+  </script>
+</body>
+</html>
