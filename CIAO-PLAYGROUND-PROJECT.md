@@ -1,7 +1,22 @@
 # Project proposal: adopting Gloria as a Ciao package and standalone Ciao-Playground web application
 
-Status: draft (v0.1) — **WP0 (feasibility spike) DONE; WP1 engine port underway** (4/4 agent scenarios parity achieved, Ciao unittest suite green, gloria.pl module header trimmed; remaining five engine files need `:- module/2` headers per §3.2).
+Status: draft (v0.2, updated 2026-10-13) — **WP0–WP4 DONE; WP5 (upstreaming) ongoing.** The native Ciao engine port is complete with **6/6 example-agent scenarios in parity** with SWI (enclosure, burocratin, gerente, arch, mylamp, rentin), the Ciao `unittest` suite is green, and the standalone `playground/gloria.html` scaffolding is in place. The full wasm build grade remains pending (§6, §9).
 Author: Gloria project (J. Davila) — for review by the Ciao team (CLIP group).
+
+> **Status update (2026-10-13).** Since the WP0 spike, the port has landed:
+> the engine is a single Ciao module (`ciao/gloria/src/gloria.pl`, which includes
+> `gloria_compat.pl`, `auxilia.pl`, `equiva.pl`, `rewrite.pl`, `implica.pl`,
+> `rplan.pl`, `gloria_body.pl`, `gloria_loader.pl`); `load_agent/2` reifies each
+> agent's `.kb`/`.main` into the shared database; the cross-engine harness
+> `ciao/gloria/tests/parity_scenarios_check.sh` is green for **all six**
+> example agents; `ciao run ciao/gloria/tests/run_unittests.pl` is green; and two
+> teaching agents were added: **`mylamp`** (motion-triggered lamp) under
+> `examples/mylamp/` and **`rentin`** (an opportunist that rationalises abuse)
+> under `examples/rentin/` (both mirrored in `src/agents/`), each with an ALD
+> notebook, a playground menu entry, and a parity scenario. The bundle lives at the repo
+> root (`Manifest/Manifest.pl`, `lib('src')`, `playground/`); `src/agents/`
+> holds the `.kb`/`.main` copies and the ported engine lives under
+> `ciao/gloria/src/`. See §4 for the as-built layout.
 
 > **WP0 status (2026-09-19).** The minimal path is ported and parity is green:
 > `ciao/gloria/src/` compiles and runs under native Ciao 1.25, and the
@@ -69,7 +84,8 @@ It runs an *abductive reasoning cycle* over an agent knowledge base.
 - **Agent sources** (`.g` files; openlog/actilog, Spanish or English):
   `TITLE / NETWORK / AGENTS / GOALS / BELIEFS / Prolog / ...` — see
   `examples/burocratin/burocratin.g`, `examples/gerente/gerente.g`,
-  `examples/enclosure/enclosure.g`.
+  `examples/enclosure/enclosure.g`, `examples/mylamp/mylamp.g`,
+  `examples/rentin/rentin.g`.
 - **Compiled agents**: `.kb` (clauses `def(Head,Body)` and `if_(Conds,[Goal])`,
   produced by `gcompile.pl` + `tokenizer.pl`, which are pure DCG) and `.main`
   (`abd/1`, `observable/1`, `user_built/1`, `dynamic` declarations, plus the
@@ -150,7 +166,7 @@ reasoning traces.
 | Gloria call | Where | Ciao status | Action |
 | --- | --- | --- | --- |
 | `format(Stream,Fmt,Args)` | generic IO + trace | `format/2,3` in `library(format)` | keep; verify `user_error` stream atom on wasm |
-| `writeln/1,2`, `writef/2` | interactive cycle, gcompile | not builtin | shim in `gloria_utils.pl` (use `format`); interactive writers excluded from the browser runtime |
+| `writeln/1,2`, `writef/2` | interactive cycle, gcompile | not builtin | shim in `gloria_compat.pl` (use `format`); interactive writers excluded from the browser runtime |
 | `print_message/2` | `gloria.pl` `eval/0`/`main/0` | SWI-only | drop (`main/0` not part of the Ciao API) |
 | `current_prolog_flag/2` | `eval/0` (argv) | `engine(runtime_control)` | keep only if needed |
 | `current_module/1` | `make_module/2` | `engine(runtime_control)` | obsoleted by the redesign (§3.2) |
@@ -188,15 +204,15 @@ one shared, `dynamic` database owned by the `gloria` library:
 | `Ag:actionsmem(Ag,T,A,P)` | `actionsmem(Ag,T,A,P)` |
 | `Ag:goalsmem(Ag,T,G)` | `goalsmem(Ag,T,G)` |
 | `Ag:ghistory(A)` | `ghistory(Ag,A)` |
-| `Ag:abd(X)` / `Ag:observable(P)` / `Ag:user_built(P)` | `spec(Ag, abd(X))` / `spec(Ag, observable(P))` / `spec(Ag, user_built(P))` |
+| `Ag:abd(X)` / `Ag:observable(P)` / `Ag:user_built(P)` | `abd(Ag,X)` / `observable(Ag,P)` / `user_built(Ag,P)` |
 
 `prolog_agent/5` keeps its public signature, so the existing SWI web server,
 `gtester.pl` and the MCP runner continue to work unchanged with the original
 SWI sources, while the Ciao port shares the same scenario outputs through the
-reified core. Agents become data: `gloria_new_agent(Ag, File)` loads a
-`.kb`/`.main`, and in the browser `gloria_load_agent_text(Ag, Text)` reads
-terms from a string with `read_from_string/3` and asserts them — no dynamic
-module hacks, fully portable to wasm.
+reified core. Agents become data: `load_agent(Ag, KbFile)` reads the agent's
+`.kb` (and its sibling `.main`) and asserts reified terms — no dynamic module
+hacks, fully portable to wasm (the term-by-term reification lives in
+`gloria_loader.pl`).
 
 The port also gives the six engine files proper `:- module/2` headers (with
 explicit exports), keeps the `:- op` declarations, declares the shared dynamic
@@ -210,50 +226,49 @@ code from the playground menus, and `unittest` can run the test suite in-page.
 Mirrors the s(CASP) bundle layout and Ciao project conventions:
 
 ```
-gloria/
-  Manifest/Manifest.pl          # :- bundle(gloria). depends([core]). lib('src').
-  src/
-    gloria.pl                   # ported cycle + public API (module header)
-    rplan.pl                    # ported reactive planner
-    implica.pl                  # ported proof procedure
-    equiva.pl
-    rewrite.pl
-    auxilia.pl                  # + reified predicate definitions
-    gloria_utils.pl             # shims: writeln/2, writef/2, read_terms_from_stream/2
-    gcompile.pl                 # ported openlog/actilog -> kb/main compiler
-    tokenizer.pl                # ported tokenizer
-    agents/
-      enclosure.pl              # one module per example agent (compiled .kb/.main)
-      burocratin.pl
-      gerente.pl
-      arch.pl
+gloria/                          # repo root == the bundle
+  Manifest/Manifest.pl           # :- bundle(gloria). depends([core,ciaowasm,builder]). lib('src').
+  src/agents/<agent>/            # compiled .kb/.main copies
+    enclosure/ burocratin/ gerente/ arch/ mylamp/ rentin/
+  ciao/gloria/src/               # ported engine (native Ciao)
+    gloria.pl                    # single module; exports prolog_agent/5, gloria_step/7,
+                                 # load_agent/2, induce_spec/4
+    gloria_compat.pl             # SWI-compat shims: writeln/2, writef/2, read helpers
+    gloria_body.pl               # reified dynamic predicates + cycle body
+    gloria_loader.pl             # load_agent/2: .kb/.main -> reified terms
+    auxilia.pl equiva.pl rewrite.pl implica.pl rplan.pl   # included sub-modules
+  ciao/gloria/tests/             # parity harness + scenario drivers + unittest suite
+    parity_scenarios_check.sh    # SWI vs Ciao, all example agents
+    run_unittests.pl             # Ciao unittest entry point
+    t_engine.pl term_shape.pl driver_*.pl
   examples/
-    enclosure/ burocratin/ gerente/ arch/      # .g sources, .kb/.main, readme.txt
-    expected-traces/            # golden traces (see §7)
+    enclosure/ burocratin/ gerente/ arch/ mylamp/ rentin/   # .g sources, .kb/.main, readme.txt
   playground/
-    gloria.html                 # standalone app page
-    gloria.js                   # app logic (menus, run-step button, trace render)
-    alds/*.md                   # ALD notebooks (editable/runnable tutorials)
-  doc/reference/                # LPdoc source for the `gloria` manual
-  tests/
-    t_engine.pl                 # unittest/ assertions for the engine
-    scenarios/                  # per-agent (input -> do/actions) expected results
-  build.sh                      # local build/serve for development (see §6)
-  COPYING                       # LGPL3 notices
+    gloria.html                  # standalone app page
+    gloria.js                    # app logic (menus, run-step button, trace render)
+    alds/*.md                    # ALD notebooks (intro, enclosure, burocratin,
+                                 # gerente, arch, mylamp, rentin)
+  build.sh serve_gloria.sh        # local build/serve for development (see §6)
+  COPYING                         # LGPL3 notices
+
+% SWI sources (gloria.pl, rplan.pl, implica.pl, equiva.pl, rewrite.pl,
+% auxilia.pl, gcompile.pl, tokenizer.pl) remain at the repo root for the SWI
+% engine and web/mcp/runner.pl.
 ```
 
-`Manifest/Manifest.pl` essentials:
+`Manifest/Manifest.pl` essentials (as built):
 
 ```prolog
 :- bundle(gloria).
 depends([core, ciaowasm, builder]).   % graded installs for the wasm site build
 lib('src').
-manual('gloria', [main='doc/reference/SETTINGS.pl']).
 
 % hooks to expose /playground/gloria.html on the site build
 '$builder_hook'(custom_run(dist_playground, [Bndl])) :-
     gloria_dist_playground(Bndl).
 ```
+
+(The LPdoc `manual(...)` declaration is planned but not yet in the manifest.)
 
 ---
 
@@ -263,7 +278,7 @@ manual('gloria', [main='doc/reference/SETTINGS.pl']).
 
 The page lets the visitor:
 
-1. Pick an agent (enclosure, burocratin, gerente, arch) from a menu (same
+1. Pick an agent (enclosure, burocratin, gerente, arch, mylamp, rentin) from a menu (same
    mechanism as the s(CASP) example menu); the agent's editable openlog/actilog
    or `.kb` text loads into the editor.
 2. Edit the agent and press *Load*; the page compiles/loads it into the wasm
@@ -291,6 +306,8 @@ window.playgroundCfg = {
     menu_i('Burocratin (procedures)',    'gloria/examples/burocratin'),
     menu_i('Gerente (queue manager)',    'gloria/examples/gerente'),
     menu_i('Arch (abduction example)',   'gloria/examples/arch'),
+    menu_i('MyLamp (motion light)',      'gloria/examples/mylamp'),
+    menu_i('Rentin (opportunist)',       'gloria/examples/rentin'),
   ],
   has_run_tests_button: true,        // Ciao unittest on the ported engine
   has_doc_button: true,
@@ -319,6 +336,11 @@ window.toplevelCfg = {
 :- export(agent_info/3).             % goals/beliefs/observables for UI panels
 ```
 
+The native port currently exports only `prolog_agent/5`, `gloria_step/7`,
+`load_agent/2` and `induce_spec/4`; the `*_code` / `run_step` / `reset_clock` /
+`agent_info` helpers above are the planned app-facing wrappers that the wasm
+page (`playground/gloria.html`) will call.
+
 The engine's interactive I/O (`observing/1`, `testing/2`, `read/1`) is
 compiled out of the browser runtime (observations are passed in programmatically
 in `prolog_agent/5`), keeping the wasm build lean.
@@ -342,6 +364,19 @@ ciao custom_run ciao_playground dist_playground gloria   # copy gloria.html into
 Serve with `ciao-serve-mt` (the multi-threaded server bundled with
 `ciao_playground`; single-threaded servers deadlock wasm loading in some
 browsers) and browse `http://localhost:8001/playground/gloria.html`.
+
+**As built (2026-10-13).** The native parity harness and unittest suite run
+directly from `ciao/gloria/` without the builder:
+
+```sh
+export PATH="$HOME/.ciaoroot/v1.25.0-m1-20260919145856/build/bin:$PATH"
+./ciao/gloria/tests/parity_scenarios_check.sh   # 6/6 PARITY OK
+ciao run ciao/gloria/tests/run_unittests.pl      # status=0, 4/4 passed
+```
+
+`ciao build --bin gloria` still needs the bundle reachable from `CIAOROOT` /
+`CIAOPATH` or registered in a catalog (see `BUILDING_NOTES.md`); the wasm grade
+and the `dist_playground` / `ciao-serve-mt` steps remain pending.
 
 ### 6.2 Releasing on ciao-lang.org
 
@@ -381,9 +416,10 @@ so the plan centers on a **parity harness**:
 
 1. **Golden scenarios.** For each example agent, capture the scenario sets from
    the per-agent skills and test files (enclosure two-step with
-   `[time_day(am), it_is(sunny)]`, burocratin's `[me_pide(jefe, x), ...]`,
-   gerente queue events, arch abduction) as (time, input, expected `do/2`
-   list) triples in `tests/scenarios/`.
+   `[time_day(am), it_is(sunny)]`, burocratin's `[me_pide(juan, sacar_constancia)]`,
+   gerente queue events, arch abduction, mylamp's `[motion(room)]`) as
+   (time, input, expected `do/2` list) triples; the live set is wired into
+   `ciao/gloria/tests/parity_scenarios_check.sh`.
 2. **Cross-dialect runs.** Run the same scenario under SWI (`swipl`, current
    engine), under Ciao native (ported engine) and under the wasm engine (via
    `node ciao-prolog.js`), normalize whitespace/formatting in the `# Gloria`
@@ -397,7 +433,7 @@ so the plan centers on a **parity harness**:
    observation) diagnostics.
 
 Acceptance criteria: all golden scenarios pass identically on the three
-backends; no `# Gloria` trace line is lost; the four example agents run from a
+backends; no `# Gloria` trace line is lost; the six example agents run from a
 clean browser session without a server.
 
 ---
@@ -415,6 +451,12 @@ In `playground/alds/`, markdown notebooks with editable/runnable cells, e.g.:
   example with `existe/1` preconditions.
 - `gerente.md` — the bank queue agent.
 - `arch.md` — the abduction example (`do_b/...`).
+- `mylamp.md` — a motion-triggered lamp: `motion(room)` →
+  `do(switch_on(lamp1),0), do(log(room),0)`.
+- `rentin.md` — an opportunist that rationalises abuse:
+  `[flojera, gano, no_hay_jueces_confiables, sin_observador]` →
+  `do(no_trabajo,0), do(abuso,0)` (and no abuse once an
+  `observador_independiente` blocks the chain).
 
 These double as the manual's tutorial chapters and are shareable via Playground
 links (the `Share!` button / `?code=` URLs), which is the standard way the
@@ -427,10 +469,10 @@ Playground spreads examples.
 | WP | Deliverable | Milestone / exit criteria | Effort (est.) |
 | --- | --- | --- | --- |
 | 0 | Feasibility spike | **DONE** — port `gloria.pl`+`rplan.pl`+`implica.pl` minimal path, run `prolog_agent/5` under native Ciao; parity harness skeleton | 1 week |
-| 1 | Engine port | All six engine files + `gloria_utils.pl`; `gloria.pl` module header trimmed (exports: `prolog_agent/5, gloria_step/7, load_agent/2, induce_spec/4`); `:- module/2` headers added to rplan, implica, equiva, rewrite, auxilia; dynamic declarations preserved; unittest suite green (4/4 agents) | 2-3 weeks |
-| 2 | Bundle packaging | `Manifest.pl`, `build.sh`, golden scenarios green on native Ciao; agents under `examples/` (loader reads `.kb`/`.main` sibling files) and under `src/agents/` (copies of `.kb`/`.main` for module layout); `ciao install gloria` placeholder for future pipeline integration | 1 week |
-| 3 | wasm + app | `ciao install --grade=wasm gloria` (requires Emscripten/build grade); `gloria.html`/`gloria.js` standalone page scaffolding created in `playground/` (see files); step/reset/trace UI working when wasm build grade is available | 2-3 weeks |
-| 4 | Docs + ALDs | LPdoc `gloria` manual (existing doc structure); ALD notebooks created and runnable in the public playground (intro, enclosure, burocratin, gerente, arch) | 1-2 weeks |
+| 1 | Engine port | **DONE** — all six engine files + `gloria_compat.pl`; `gloria.pl` module header (exports: `prolog_agent/5, gloria_step/7, load_agent/2, induce_spec/4`); `:- module/2` headers added to rplan, implica, equiva, rewrite, auxilia; dynamic declarations preserved; unittest suite green and **6/6 example agents** in parity | 2-3 weeks |
+| 2 | Bundle packaging | **DONE** — `Manifest.pl`, `build.sh`, golden scenarios green on native Ciao; agents under `examples/` (loader reads `.kb`/`.main` sibling files) and under `src/agents/` (copies of `.kb`/`.main` for module layout); `ciao install gloria` placeholder for future pipeline integration | 1 week |
+| 3 | wasm + app | **DONE (native scaffolding)** — `gloria.html`/`gloria.js` standalone page scaffolding created in `playground/` (see files; native Ciao verified); step/reset/trace UI working when the wasm build grade (`ciao install --grade=wasm gloria`, requires Emscripten) is available | 2-3 weeks |
+| 4 | Docs + ALDs | **DONE** — LPdoc `gloria` manual (existing doc structure); 7 ALD notebooks created and runnable in the public playground (intro, enclosure, burocratin, gerente, arch, mylamp, rentin) | 1-2 weeks |
 | 5 | Upstreaming | Submit bundle + hooks to the Ciao team; get `gloria.html` on ciao-lang.org | ongoing |
 
 Total ~2-3 months of part-time work. Risks and mitigations:
