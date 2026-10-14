@@ -1,6 +1,6 @@
 ---
 name: gloria
-description: Use when the user wants to run, test, query or demonstrate a Gloria agent (enclosure, burocratin, gerente, arch) - "run the enclosure agent", "Gloria reasoning step", "gloria_run_step", "what actions does the burocratin agent take", "list Gloria agents". Covers the gloria MCP tools, the observation/action/session model, and how to read a reasoning trace.
+description: Use when the user wants to run, test, query or demonstrate a Gloria agent (enclosure, burocratin, gerente, arch, mylamp, rentin) - "run the enclosure agent", "Gloria reasoning step", "gloria_run_step", "what actions does the burocratin agent take", "list Gloria agents". Covers the gloria MCP tools, the observation/action/session model, and how to read a reasoning trace.
 ---
 
 # Gloria via the gloria MCP server
@@ -50,8 +50,9 @@ small JSON protocol with it.
 
 ## Per-agent skills
 
-See `gloria-enclosure`, `gloria-burocratin`, `gloria-gerente` and
-`gloria-arch` for each agent's observables, goals and a known-good sample run.
+See `gloria-enclosure`, `gloria-burocratin`, `gloria-gerente`, `gloria-arch`,
+`gloria-mylamp` and `gloria-rentin` for each agent's observables, goals and a
+known-good sample run.
 
 ## Caveats
 

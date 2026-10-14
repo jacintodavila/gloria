@@ -1,0 +1,28 @@
+tracefile('rentin.dot').  % see flach/graphviz.pl
+for_testing_only(false).
+
+% abducible predicates (acciones y observaciones asumibles)
+%   - abuso / no_trabajo son las acciones (las metas)
+%   - el resto son las hojas observables (entradas)
+%
+abd(abuso).
+abd(no_trabajo).
+abd(flojera).
+abd(gano).
+abd(no_hay_jueces_confiables).
+abd(sin_observador).
+abd(datos_se_pierden).
+abd(observador_independiente).
+
+% observable predicates (lo que el agente percibe)
+%
+observable(flojera).
+observable(gano).
+observable(no_hay_jueces_confiables).
+observable(sin_observador).
+observable(datos_se_pierden).
+observable(observador_independiente).
+
+% built-in, user-defined predicates
+%
+user_built(true).

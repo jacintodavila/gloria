@@ -1,0 +1,16 @@
+tracefile('mylamp.dot').  % see flach/graphviz.pl
+for_testing_only(false).
+
+% abducible predicates
+%
+abd(motion).
+abd(switch_on).
+abd(log).
+
+% observable predicates
+%
+observable(motion(_)).
+
+% built-in, user-defined predicates
+%
+user_built(true).

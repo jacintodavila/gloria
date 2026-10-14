@@ -41,5 +41,9 @@ run_one gerente    examples/gerente/gerente.kb \
     '[[timing(1),cola_larga],[timing(2),taq_vacias]]'
 run_one arch       examples/arch/ex-arch.kb \
     '[[build(5),c(5),c(8),b(10)]]'
+run_one mylamp     examples/mylamp/mylamp.kb \
+    '[[motion(room)]]'
+run_one rentin     examples/rentin/rentin.kb \
+    '[[flojera,gano,no_hay_jueces_confiables,sin_observador],[flojera,gano,no_hay_jueces_confiables,observador_independiente]]'
 
 exit $fail

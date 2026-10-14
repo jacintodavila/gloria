@@ -1,0 +1,2 @@
+if_(motion(M), [light_on(M)]).
+def(light_on(M), (switch_on(lamp1), log(M))).

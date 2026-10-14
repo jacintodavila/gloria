@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <title>Playground for Gloria reactive agents</title>
-  <script src="ciao-wasm.js"></script>
+  <!-- <script src="ciao-wasm.js"></script> -->
+  <script>console.warn("ciao-wasm.js loading disabled: running in native/static mode");</script>
 </head>
 <body>
   <div id="gloria-root"></div>
@@ -21,6 +22,8 @@
         {name: "Burocratin (procedures)", dir: "burocratin"},
         {name: "Gerente (queue manager)", dir: "gerente"},
         {name: "Arch (abduction example)", dir: "arch"},
+        {name: "MyLamp (motion light)", dir: "mylamp"},
+        {name: "Rentin (opportunist)", dir: "rentin"},
       ],
       has_run_tests_button: true,
       has_doc_button: true,
