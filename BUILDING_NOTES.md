@@ -70,7 +70,7 @@ gloria/
   src/                          # engine files
   examples/                     # agent .g/.kb/.main files
   tests/                        # parity harness, unittest suite
-  playground/                   # gloria.html, gloria.js, alds/
+  playground/                   # gloria.html (generated), mkpage.py, agents/, alds/
   BUILDING_NOTES.md              # this file
 ```
 

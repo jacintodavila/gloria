@@ -65,75 +65,93 @@ ciao-serve-mt
 
 ## Local Testing Workflow
 
-### 6. Run the local server (without wasm)
-Since we're in an environment without wasm build grade, you can still test the **static configuration**:
+### 6. Regenerate and run the page
+
+The page is generated: `playground/gloria.html` and the self-contained agent
+sources in `playground/agents/*.pl` come from `src/agents/`.  After changing
+an agent (or adding one), regenerate both:
 
 ```bash
-# Start a simple HTTP server from the playground directory
-cd /home/jacinto/git/gloria/playground
-python -m http.server 8000
-
-# Then open in browser:
-open http://localhost:8000/playground/gloria.html
+python3 playground/mkpage.py     # from the repo root
 ```
 
-### 7. Verify the configuration (already validated)
-The following have been validated:
+Then serve the assembled site (`$CIAOROOT/build/site`) and open the page:
 
-- `playground/gloria.html` – has `window.playgroundCfg`, `window.toplevelCfg`, 
-  `has_run_tests_button: true`, `has_doc_button: true`, `splash_code`
-- `playground/gloria.js` – has `runGloriaStep`, `resetGloriaClock`, `loadGloriaAgent`
-- `Manifest/Manifest.pl` – `:- bundle(gloria). depends([core, ciaowasm, builder]). lib('src').`
-
-### 8. What you'll see in the browser (static config only)
-- The splash code (enclosure.kb + step script) will display
-- The agent menu (enclosure, burocratin, gerente, arch) will appear
-- "Run tests" and "Doc" buttons will be functional placeholders
-- The `# Gloria` reasoning trace and `do/2` actions won't render until the wasm build grade is available, but the **configuration is valid** and the buttons are functional placeholders
-
-### 9. Full wasm test (when Emscripten is available)
 ```bash
-# Build wasm grade
+./serve_gloria.sh                # http://localhost:8000/playground/gloria.html
+```
+
+Use the multi-threaded server: single-threaded servers may deadlock when the
+worker loads the wasm engine.
+
+### 7. What the page does
+
+- The editor holds a **self-contained** Gloria agent: a `:- module(<agent>, [])`
+  directive, the `abd/1` / `observable/1` configuration and the `if_/2` / `def/2`
+  knowledge base, all in one `.pl` file.  The *Examples* menu replaces it with
+  any of the six shipped agents.
+- The website explains the flow: `Load ▶` uploads the editor to the wasm worker
+  and runs `gloria:load_agent_code('/<agent>.pl')`, which builds the reified
+  agent from that file (the agent id is the file's basename).
+- Reasoning steps are ordinary queries typed in the top level:
+
+  ```prolog
+  ?- prolog_agent(enclosure, 0, 400, [time_day(am), it_is(sunny)], Actions).
+  ?- gloria_step(enclosure, 0, 400, [time_day(am), it_is(sunny)], Ng, Og, Actions).
+  ```
+
+  The `# Gloria ...` reasoning trace is written on `user_error` and therefore
+  shows up next to the solution.
+- Two platform details constrain the design (both checked against
+  `ciao_playground.js` / `ciao-prolog.js`): the editor only supports the `.pl`,
+  `.md` and `.lpdoc` extensions, and the uploaded path is
+  `'/' + <name in the module directive> + '.pl'`.
+
+### 8. Verify the glue natively
+`load_agent_code/1` is exercised by `ciao/gloria/tests/t_playground.pl`, which
+replays the same golden scenarios as the parity harness through the generated
+`.pl` files:
+
+```bash
+ciao run ciao/gloria/tests/run_unittests.pl   # t_engine + t_playground
+```
+
+### 9. Full wasm build
+```bash
+ciao build --grade=wasm ciaowasm
+ciao install --grade=wasm -x ciaowasm
+ciao install --grade=wasm builder
 ciao install --grade=wasm gloria
-
-# Deploy
+ciao custom_run ciao_playground dist
 ciao custom_run ciao_playground dist_playground gloria
-
-# Serve
-ciao-serve-mt
-
-# Browse
-open http://localhost:8001/playground/gloria.html
+./serve_gloria.sh
 ```
 
-In the browser you should be able to:
-- Pick an agent from the menu
-- Edit its goals/beliefs or `.kb` text
-- Press **Load** to compile/load it into the wasm worker
-- Press **Step** to advance one cycle and see `do(Name,Time)` actions
-- Inspect the `# Gloria` reasoning trace in the preview area
-- Press **Reset clock** to reset the time step
-- Run the Ciao unittest suite from the in-page "Run tests" button
-- Export/share via `?code=` URLs
+(Emscripten must be on `PATH`; `ciao fetch lpdoc` is needed once for
+`ciao_playground dist`.)
 
 ## 📋 Self-Hosted Testing Checklist (for this environment)
 
 | Test | How to Run | Status |
 |---|---|---|
-| **Core engine** | `./ciao/gloria/tests/parity_scenarios_check.sh` and `./ciao/gloria/tests/run_unittests.pl` | ✅ 4/4 passed, `status=0` |
-| **Config validity** | Node validation script (`validate_config.js`) | ✅ All checks passed |
-| **Static server** | `sh serve_gloria.sh` then `open http://localhost:8000/playground/gloria.html` | ✅ Server starts, page loads with config UI |
-| **Full wasm** | `ciao install --grade=wasm gloria` (needs Emscripten) | ❌ Not available in this env |
-| **Upstreaming** | Submit bundle + hooks to Ciao team | ⏳ Pending your decision (Option B: self-hosted) |
+| **Core engine** | `ciao run ciao/gloria/tests/run_unittests.pl` | ✅ 10/10 passed, `status=0` (4 engine + 6 playground glue) |
+| **Parity** | `./ciao/gloria/tests/parity_scenarios_check.sh` | ✅ 6/6 agents |
+| **Page validity** | `python3 playground/mkpage.py` then `node --check` on the page scripts | ✅ 6 example links, splash = enclosure agent |
+| **Wasm bundle** | `ciao install --grade=wasm builder gloria` | ✅ Installed (emcc 6.0.10) |
+| **Site** | `ciao custom_run ciao_playground dist dist_playground gloria` then `./serve_gloria.sh` | ✅ All assets 200 on `http://localhost:8000/playground/gloria.html` |
+| **In-browser query** | Load ▶ then `prolog_agent(...)` in the top level | ⏳ Needs a browser (Automated check limited to asset serving) |
 
 ## 🛠️ Troubleshooting
 
 | Issue | Likely Cause | Fix |
 |---|---|---|
-| `ciao-wasm.js` 404 / module not found | Wasm build grade not installed | Install Emscripten + `ciao install --grade=wasm gloria` |
-| Page loads but actions don't work | `gloria.html` scripts blocked or wasm not loaded | Ensure `ciao-wasm.js` loads; check browser console |
-| `serve_gloria.sh` falls back to Python | `cii-serve-mt` not installed | Use the Python fallback (already included) |
-| ALD notebooks don't render | Browser may block `file:` URLs | Use `http://localhost:8000/` server |
+| `library(gloria/gloria)` not found in the page | Bundle not installed for the wasm grade | `ciao install --grade=wasm gloria` (with emcc on `PATH`) |
+| Page loads but nothing runs | Page assembled but not served from the site root | Serve `$CIAOROOT/build/site` (`./serve_gloria.sh`), not the repo |
+| Agent not built after `Load ▶` | No `:- module(<agent>, ...)` at the top of the editor | Keep the module directive: it gives the agent its name (the file path becomes `/<agent>.pl`) |
+| Wrong agent picked up | The editor's module name changed | The agent id *is* the module name; reload after renaming |
+| `Load ▶` says the file is missing | The editor content was not uploaded | `load_agent_code` must be listed in `special_query` with `read_code: true` |
+| `serve_gloria.sh` falls back to Python | `mt-httpd.py` not found | Harmless fallback; keep the threaded server for wasm |
+| ALD notebooks don't render | Browser may block `file:` URLs | Use the `http://localhost:8000/` server |
 
 ## 📦 What's Included in This Repo for Testing
 
@@ -145,10 +163,11 @@ gloria/
   src/                          # engine files with :- module/2 headers
   examples/                      # original agent .g/.kb/.main files
   tests/                         # parity harness, unittest suite, scenarios
-  playground/                    # gloria.html, gloria.js, alds/ (WP3 scaffolding)
-    gloria.html                  # config + example list (validated)
-    gloria.js                    # JS helpers (validated)
-    alds/                        # 5 ALD notebooks (intro, enclosure, burocratin, gerente, arch)
+  playground/                    # page + generator + generated agents (WP3)
+    gloria.html                  # GENERATED by mkpage.py - do not edit
+    mkpage.py                    # generates gloria.html and agents/*.pl
+    agents/*.pl                  # GENERATED self-contained agents (one per agent)
+    alds/                        # 7 ALD notebooks (intro, enclosure, burocratin, gerente, arch, mylamp, rentin)
   serve_gloria.sh                # local server setup script
   testing_emscripten.md          # this file
 ```

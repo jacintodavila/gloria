@@ -14,15 +14,18 @@
       prolog_agent(Ag, T, R, Obs, Actions)
       gloria_step(Ag, T, R, Obs, NextGs, OutGs, Actions)   % debug/parity
       load_agent(Ag, KbFile)
+      load_agent_code(Path)                    % browser playground glue
       main/0                       % batch driver (tests/driver_gloria.pl)
 */
 
-:- module(gloria, [prolog_agent/5, gloria_step/7, load_agent/2, induce_spec/4],
+:- module(gloria, [prolog_agent/5, gloria_step/7, load_agent/2,
+                   load_agent_code/1, induce_spec/4],
           [classic]).
 
 :- use_module(library(classic/classic_predicates)).
 :- use_module(library(terms_check), [variant/2, subsumes_term/2, unifiable/3]).
 :- use_module(library(terms_vars), [term_variables/2]).
+:- use_module(library(pathnames), [path_basename/2, path_splitext/3]).
 
 :- include('gloria_compat.pl').
 :- include('auxilia.pl').

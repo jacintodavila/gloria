@@ -33,16 +33,46 @@
 load_agent(Ag, KbFile) :-
     retract_all_agent(Ag),
     read_terms_file(Ag, KbFile),
-    kb_main(KbFile, MainFile),
+    load_agent_main(Ag, KbFile).
+
+% Read the '<base>.main' configuration file (abd/1, observable/1,
+% user_built/1, for_testing_only/1, ...), if it exists next to the
+% knowledge file.  Any knowledge file extension works: for the classic
+% '<name>.kb' layout the sibling is '<name>.main', and so it is for the
+% single-file layout used by the browser playground ('<name>.pl',
+% produced by load_agent_code/1 below).  A missing sibling file is not
+% an error.
+load_agent_main(Ag, KbFile) :-
+    path_splitext(KbFile, Base, _Ext),
+    atom_concat(Base, '.main', MainFile),
     (   catch(open(MainFile, read, S), _, fail)
     ->  read_agent_stream(Ag, S),
         close(S)
     ;   true
     ).
 
-kb_main(KbFile, MainFile) :-
-    atom_concat(Base, '.kb', KbFile),
-    atom_concat(Base, '.main', MainFile).
+/* ---------------------------------------------------------------------- */
+/*  Browser playground glue                                                */
+/*
+    `load_agent_code(Path)` is the query issued by the playground when
+    the user loads the editor contents (see `custom_load_query` in
+    playground/gloria.html).  The playground uploads the editor text as
+    a single file in the worker's virtual filesystem; its path is
+    '/<agent>.pl', where '<agent>' comes from an initial
+    `:- module(<agent>, ...)` directive in the editor (the playground
+    derives the module name from the code, see guess_mod_name in
+    ciao_playground.js).
+
+    So the agent id is just the basename of the uploaded file, and both
+    the rules (if_/2, def/2, plain facts and clauses) and the
+    configuration facts (abd/1, observable/1, ...) live in that same
+    file -- a '.main' sibling is loaded too when the user provides one.
+*/
+load_agent_code(Path) :-
+    path_basename(Path, Base),
+    path_splitext(Base, Ag, _Ext),
+    Ag \== '',
+    load_agent(Ag, Path).
 
 read_terms_file(Ag, File) :-
     open(File, read, S),
