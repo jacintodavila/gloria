@@ -100,6 +100,12 @@ worker loads the wasm engine.
   ?- gloria_step(enclosure, 0, 400, [time_day(am), it_is(sunny)], Ng, Og, Actions).
   ```
 
+  They are written *unqualified*; the page rewrites them into the `gloria`
+  module in Prolog (`disguise_trans_query/3`, see
+  `library(gloria/gloria_playground)`), because the top level runs in `user`
+  and the engine is a single module -- qualifying them by hand there raises
+  *Bad module qualification*.
+
   The `# Gloria ...` reasoning trace is written on `user_error` and therefore
   shows up next to the solution.
 - Two platform details constrain the design (both checked against
@@ -134,7 +140,7 @@ ciao custom_run ciao_playground dist_playground gloria
 
 | Test | How to Run | Status |
 |---|---|---|
-| **Core engine** | `ciao run ciao/gloria/tests/run_unittests.pl` | ✅ 10/10 passed, `status=0` (4 engine + 6 playground glue) |
+| **Core engine** | `ciao run ciao/gloria/tests/run_unittests.pl` | ✅ 11/11 passed, `status=0` (4 engine + 7 playground glue) |
 | **Parity** | `./ciao/gloria/tests/parity_scenarios_check.sh` | ✅ 6/6 agents |
 | **Page validity** | `python3 playground/mkpage.py` then `node --check` on the page scripts | ✅ 6 example links, splash = enclosure agent |
 | **Wasm bundle** | `ciao install --grade=wasm builder gloria` | ✅ Installed (emcc 6.0.10) |
@@ -150,6 +156,7 @@ ciao custom_run ciao_playground dist_playground gloria
 | Agent not built after `Load ▶` | No `:- module(<agent>, ...)` at the top of the editor | Keep the module directive: it gives the agent its name (the file path becomes `/<agent>.pl`) |
 | Wrong agent picked up | The editor's module name changed | The agent id *is* the module name; reload after renaming |
 | `Load ▶` says the file is missing | The editor content was not uploaded | `load_agent_code` must be listed in `special_query` with `read_code: true` |
+| Queries say *Bad module qualification* | `library(gloria/gloria)` is not imported into `user`, and `user` does not see the engine | Expected: the page rewrites Gloria goals into the `gloria` module in Prolog (`disguise_trans_query/3`). If it is not happening, check that the `install_disguise_trans_query` script is in the page |
 | `serve_gloria.sh` falls back to Python | `mt-httpd.py` not found | Harmless fallback; keep the threaded server for wasm |
 | ALD notebooks don't render | Browser may block `file:` URLs | Use the `http://localhost:8000/` server |
 

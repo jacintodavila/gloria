@@ -236,12 +236,13 @@ gloria/                          # repo root == the bundle
     gloria_compat.pl             # SWI-compat shims: writeln/2, writef/2, read helpers
     gloria_body.pl               # reified dynamic predicates + cycle body
     gloria_loader.pl             # load_agent/2 + load_agent_code/1: files -> reified terms
+    gloria_playground.pl         # disguise_trans_query/3: top-level query rewriting
     auxilia.pl equiva.pl rewrite.pl implica.pl rplan.pl   # included sub-modules
   ciao/gloria/tests/             # parity harness + scenario drivers + unittest suite
     parity_scenarios_check.sh    # SWI vs Ciao, all example agents
     run_unittests.pl             # Ciao unittest entry point (t_engine + t_playground)
     t_engine.pl term_shape.pl driver_*.pl
-    t_playground.pl              # load_agent_code/1 on playground/agents/*.pl
+    t_playground.pl              # load_agent_code/1 + query rewriting on the page glue
   examples/
     enclosure/ burocratin/ gerente/ arch/ mylamp/ rentin/   # .g sources, .kb/.main, readme.txt
   playground/
@@ -325,20 +326,46 @@ var toplevelCfg = {
   init_bundles: ['ciaowasm', 'core', 'builder', 'gloria'],
   init_queries: [
     'use_module(engine(internals), [reload_bundleregs/0])',
-    'use_module(library(classic/classic_predicates))',
-    'use_module(library(gloria/gloria))'
+    'use_module(library(classic/classic_predicates))'
+    // NOTE: library(gloria/gloria) is *not* imported into `user'
   ],
   special_query: {
     'use_module':      { read_code: true, mark_errs: true },
     'load_agent_code': { read_code: true, mark_errs: true } // upload the editor first
   },
-  custom_load_query: m => "gloria:load_agent_code('" + m + "')"
+  custom_load_query: m => "gloria_playground_load('" + m + "')",
+  custom_run_query:  q => q   // rewriting happens in Prolog, see below
 };
 ```
 
-Two facts about the `ciao_playground` platform drove this design (both
-verified in `~/.ciao/ciao_playground/src/ciao_playground.js` and
-`~/.ciao/ciaowasm/js/ciao-prolog.js`):
+### 5.2.1 Reaching a single-module engine from the top level
+
+Gloria is one Ciao module, so its predicates are only reachable qualified
+(`gloria:prolog_agent(...)`) -- and the playground's top level runs in `user`,
+which rejects that qualification with *"Bad module qualification ... module
+user does not import the predicate from module gloria"*.
+
+Importing the whole engine into `user` would work but would also expose every
+private helper as an unqualified goal.  The page therefore keeps the top
+level clean and rewrites queries **in Prolog, inside the `gloria` scope**,
+with `disguise_trans_query/3` from `library(gloria/gloria_playground)`:
+
+```
+load_agent_code(P) -> gloria:load_agent_code(P)
+prolog_agent(...)  -> gloria:prolog_agent(...)
+gloria_step(...)   -> gloria:gloria_step(...)
+```
+
+The page wraps `ToplevelProc.trans_query` (the same hook the s(CASP)
+playground uses): for a query that would fail as unknown it calls
+`disguise_trans_query(Query, R, Q), R = ok, Q` without adding it to the
+query history, and runs the result.  The load query is not rewritten at all
+(`custom_run_query` is a no-op): it is a loader operation, not a Gloria goal.
+
+### 5.2.2 Platform constraints
+
+Both verified in `~/.ciao/ciao_playground/src/ciao_playground.js` and
+`~/.ciao/ciaowasm/js/ciao-prolog.js`:
 
 * The editor only ever holds a **`.pl`** file: `file_ext_def` defines
   `.pl`, `.md` and `.lpdoc`, and any other extension breaks
@@ -349,11 +376,6 @@ verified in `~/.ciao/ciao_playground/src/ciao_playground.js` and
   directive (or `draft`).  So putting `:- module(enclosure, ...)` at the top
   of the editor makes the worker path `/enclosure.pl`, which is exactly what
   `load_agent_code/1` uses as the agent id.
-
-`custom_run_query` is deliberately **not** used: it would also wrap the load
-query (both user queries and the load query go through `trans_query/2`),
-and it buys nothing -- `prolog_agent/5` and `gloria_step/7` are ordinary
-queries that the user types in the top level.
 
 `example_list` cannot point at the bundle (`open_example/2` reads
 `get_bundle_srcdir(Bundle)` in the worker's VFS, and `ciao install

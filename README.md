@@ -28,13 +28,13 @@ export PATH="$HOME/.ciaoroot/v1.25.0-m1-20260919145856/build/bin:$PATH"
 ```bash
 ciao run ciao/gloria/tests/run_unittests.pl
 ```
-**Expected output:** `Note: {Total: Passed: 10 (100.00%) Failed: 0 (0.00%) ...}` + `UNITEST status=0`
+**Expected output:** `Note: {Total: Passed: 11 (100.00%) Failed: 0 (0.00%) ...}` + `UNITEST status=0`
 
 (The suite has two halves: `t_engine` replays the golden scenarios through
 `load_agent/2` on the `examples/` `.kb` files, and `t_playground` replays the
 same scenarios through `load_agent_code/1` on the generated
-`playground/agents/*.pl` files.  The latter covers the exact entry point the
-browser page uses.)
+`playground/agents/*.pl` files, plus the page's `disguise_trans_query/3`
+rewriting.  The latter covers the exact entry point the browser page uses.)
 
 ## 🛠️ Local Self-Hosted Testing
 
