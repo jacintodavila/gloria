@@ -20,14 +20,16 @@
 
 :- module(t_playground,
           [enclosure_pg/0, burocratin_pg/0, gerente_pg/0, arch_pg/0,
-           mylamp_pg/0, rentin_pg/0],
+           mylamp_pg/0, rentin_pg/0, query_rewriting/0],
           [assertions]).
 
 :- doc(title, "Gloria playground glue tests (load_agent_code/1)").
 
 :- use_module(library(format)).
 :- use_module(library(pathnames), [path_basename/2, path_splitext/3]).
+:- use_module(library(terms_check), [variant/2]).
 :- use_module('../src/gloria').
+:- use_module('../src/gloria_playground').
 
 :- test enclosure_pg
    # "enclosure: same golden actions as t_engine, loaded from the .pl form".
@@ -81,6 +83,28 @@ rentin_pg :-
               [[do(no_trabajo, 0), do(abuso, 0)],
                [do(no_trabajo, 1)]]).
 
+:- test query_rewriting
+   # "the page's disguise_trans_query/3 rewrites Gloria goals into the gloria module".
+
+query_rewriting :-
+    rw(prolog_agent(enclosure, 0, 400, [], _),
+       gloria:prolog_agent(enclosure, 0, 400, [], _)),
+    rw(gloria_step(enclosure, 0, 400, [], _, _, _),
+       gloria:gloria_step(enclosure, 0, 400, [], _, _, _)),
+    rw(load_agent_code('/enclosure.pl'),
+       gloria:load_agent_code('/enclosure.pl')),
+    % non-Gloria queries are left untouched (and reported as 'none')
+    disguise_trans_query(foo(bar), R, foo(bar)),
+    R == none.
+
+rw(Q0, Expected) :-
+    disguise_trans_query(Q0, R, Q),
+    (   R == ok, variant(Q, Expected)
+    ->  true
+    ;   format('FAIL rewriting:~nt  got      ~w / ~w~nt  expected ok / ~w~n',
+               [R, Q, Expected]),
+        fail
+    ).
 %% The agent id is the basename of the uploaded file (load_agent_code/1)
 pg_agent(Path, Ag) :-
     path_basename(Path, Base),

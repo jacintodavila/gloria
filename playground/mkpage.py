@@ -174,11 +174,69 @@ PAGE = """\
         },
         // Build the agent from the uploaded editor file. Its path is
         // '/<agent>.pl', where <agent> comes from the module directive.
-        custom_load_query: m => "gloria:load_agent_code('" + m + "')"
+        //
+        // The query is the editor text itself (not load_agent_code(...)),
+        // so disguise_trans_query can wrap loader queries uniquely even
+        // when the editor imports further loader operations, and so the
+        // agent always gets the module directive from the current editor.
+        custom_load_query: m => "gloria_playground_load('" + m + "')",
+        // The user query goes in as it is; disguise_trans_query/3 does the
+        // 'gloria:' prefixing in Prolog (see gloria_playground.pl).
+        custom_run_query: q => q
       };
     </script>
     <script> var lpdocPG='playground'; </script>
     <script src="/js/lpdoc.js"></script> <!-- LPdoc UI -->
+    <script>
+      // disguise_trans_query/3 is executed (without being added to the
+      // history) so that the run_query goal is handed to Prolog for the
+      // in-'gloria'-scope rewriting (see the module comment in
+      // gloria_playground.pl).  The transformations are applied inside out.
+      window.disguise_trans_query = function (js_run_query, js_query) {
+        const q = js_query;
+        setTimeout(async () => {
+          await js_run_query(
+            'use_module(library(gloria/gloria_playground),' +
+            ' [disguise_trans_query/3]),' +
+            ' disguise_trans_query(' + q + ', R, Q), ' + 'R = ok, ' + 'Q.',
+            {msg: 'Loading'});
+        }, 0);
+      };
+      //
+      // The main toplevel (var toplevel) is installed here and used below.
+      /* global toplevel, report_and_store_last_query */
+      let installed = false;
+      function install_disguise_trans_query() {
+        if (installed || typeof toplevel === 'undefined') return;
+        installed = true;
+        const orig_trans_query = toplevel.trans_query;
+        toplevel.trans_query = async function (query) {
+          if (query.startsWith("disguise_trans_query(")) {
+            return orig_trans_query.call(this, query);
+          }
+          let tr = await orig_trans_query.call(this, query, {msg: 'Running'});
+          if (tr.treat_outerr === null) { // Unknown command
+            if (!this.muted && ptr_msg.editor_status === '') {
+              report_and_store_last_query(tr.q);
+              window.disguise_trans_query(
+                (q, opts) => {
+                  this.q_opts = opts;
+                  window.disguise_trans_query_done = true;
+                  window.dispatchEvent(new Event('disguise-trans-query-done'));
+                  return this.w.query_one_begin(q);
+                },
+                tr.q
+              );
+            }
+          }
+          // This tricks run_query into thinking it is running
+          return {q: `'$disguise_trans_query_disabled$', true`, treat_outerr: null};
+        };
+      }
+      window.addEventListener('DOMContentLoaded', () => {
+        install_disguise_trans_query();
+      });
+    </script>
   </head>
   <body></body>
 </html>
