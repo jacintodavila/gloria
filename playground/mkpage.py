@@ -26,6 +26,16 @@ from urllib.parse import quote
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# The Gloria bundle's source directory as seen *inside the wasm worker*.
+# `ciao install --grade=wasm' packs the bundle under the workspace's
+# `~/.ciao' path (the `srcdir' in the generated `gloria.bundle.json'), and
+# the worker's VFS uses those absolute paths, so the page must use the same
+# to import the engine sources (see the init_queries comment in PAGE).
+# Override with GLORIA_BUNDLE_SRCDIR if the bundle was installed elsewhere.
+BUNDLE_SRCDIR = os.environ.get(
+    'GLORIA_BUNDLE_SRCDIR', os.path.expanduser('~/.ciao/gloria'))
+
+
 # (agent id, human name, knowledge base file, configuration file)
 # The agent id is what load_agent_code/1 will derive from the file name.
 AGENTS = [
@@ -110,7 +120,7 @@ def splash_code(agents):
     return SPLASH_HEADER + '\n' + src
 
 
-PAGE = """\
+PAGE = r"""\
 <!DOCTYPE html>
 <html>
   <head>
@@ -160,81 +170,114 @@ PAGE = """\
         statistics: false,
         // (defaults are ciaowasm, core, builder)
         init_bundles: ['ciaowasm', 'core', 'builder', 'gloria'],
+        // Load the Gloria engine and the query-rewriting helper into the
+        // worker by their *source path*, not as `library(...)'.
+        //
+        // The engine predicates (`prolog_agent/5', `load_agent_code/1', ...)
+        // live in the single `gloria' module, and the top level runs in
+        // `user': module-qualifying them from `user' fails with "Bad module
+        // qualification", and `use_module(library(gloria/gloria))' cannot
+        // be resolved inside the prebuilt wasm engine (its bundle registry
+        // does not carry the gloria library aliases).  The `.pl' sources
+        // *are* in the worker VFS, so importing them by path works and is
+        // what makes the engine usable from the top level.
+        //
+        // NOTE: `%(srcpath)s' is the bundle's source directory as seen
+        // inside the worker; it is written by mkpage.py from the workspace
+        // location (see `bundle_srcdir' in the bundle metadata).
         init_queries: [
           'use_module(engine(internals), [reload_bundleregs/0])',
           'use_module(library(classic/classic_predicates))',
-          'use_module(library(gloria/gloria))'
+          "use_module('%(srcpath)s/ciao/gloria/src/gloria.pl')",
+          "use_module('%(srcpath)s/ciao/gloria/src/gloria_playground.pl'," +
+            ' [disguise_trans_query/3])'
         ],
         // 'use_module': upload the editor before loading modules.
-        // 'load_agent_code': upload the editor before building the agent
-        // (the functor is what trans_query/2 matches, module prefix aside).
+        // 'load_agent_code': upload the editor before building the agent.
         special_query: {
           'use_module': { read_code: true, mark_errs: true },
           'load_agent_code': { read_code: true, mark_errs: true }
         },
-        // Build the agent from the uploaded editor file. Its path is
-        // '/<agent>.pl', where <agent> comes from the module directive.
-        //
-        // The query is the editor text itself (not load_agent_code(...)),
-        // so disguise_trans_query can wrap loader queries uniquely even
-        // when the editor imports further loader operations, and so the
-        // agent always gets the module directive from the current editor.
-        custom_load_query: m => "gloria_playground_load('" + m + "')",
-        // The user query goes in as it is; disguise_trans_query/3 does the
-        // 'gloria:' prefixing in Prolog (see gloria_playground.pl).
+        // Build the agent from the uploaded editor file (path '/<agent>.pl',
+        // where <agent> comes from the module directive).  `load_agent_code'
+        // is a Gloria entry point, so the query wrapper below turns it into
+        // `gloria:load_agent_code(...)' while `special_query' above still
+        // matches the original functor and uploads the editor first.
+        custom_load_query: m => "load_agent_code('" + m + "')",
+        // User queries go in as they are; the page wraps them for Prolog
+        // rewriting (see pg_rewrite_goal).
         custom_run_query: q => q
       };
     </script>
     <script> var lpdocPG='playground'; </script>
     <script src="/js/lpdoc.js"></script> <!-- LPdoc UI -->
     <script>
-      // disguise_trans_query/3 is executed (without being added to the
-      // history) so that the run_query goal is handed to Prolog for the
-      // in-'gloria'-scope rewriting (see the module comment in
-      // gloria_playground.pl).  The transformations are applied inside out.
-      window.disguise_trans_query = function (js_run_query, js_query) {
-        const q = js_query;
-        setTimeout(async () => {
-          await js_run_query(
-            'use_module(library(gloria/gloria_playground),' +
-            ' [disguise_trans_query/3]),' +
-            ' disguise_trans_query(' + q + ', R, Q), ' + 'R = ok, ' + 'Q.',
-            {msg: 'Loading'});
-        }, 0);
-      };
+      // --------------------------------------------------------------------
+      // Let Prolog rewrite the page's top-level queries.
       //
-      // The main toplevel (var toplevel) is installed here and used below.
-      /* global toplevel, report_and_store_last_query */
-      let installed = false;
-      function install_disguise_trans_query() {
-        if (installed || typeof toplevel === 'undefined') return;
-        installed = true;
-        const orig_trans_query = toplevel.trans_query;
-        toplevel.trans_query = async function (query) {
-          if (query.startsWith("disguise_trans_query(")) {
-            return orig_trans_query.call(this, query);
-          }
-          let tr = await orig_trans_query.call(this, query, {msg: 'Running'});
-          if (tr.treat_outerr === null) { // Unknown command
-            if (!this.muted && ptr_msg.editor_status === '') {
-              report_and_store_last_query(tr.q);
-              window.disguise_trans_query(
-                (q, opts) => {
-                  this.q_opts = opts;
-                  window.disguise_trans_query_done = true;
-                  window.dispatchEvent(new Event('disguise-trans-query-done'));
-                  return this.w.query_one_begin(q);
-                },
-                tr.q
-              );
-            }
-          }
-          // This tricks run_query into thinking it is running
-          return {q: `'$disguise_trans_query_disabled$', true`, treat_outerr: null};
+      // The playground's top level runs in `user', and the Gloria engine is
+      // a single Ciao module, so `prolog_agent(...)' typed there is unknown
+      // and `gloria:prolog_agent(...)' is a bad qualification.  Rather than
+      // importing the whole engine into `user', we ask Prolog to rewrite
+      // each user query inside the `gloria' scope:
+      //
+      //     disguise_trans_query(Query, _, Q), Q
+      //
+      // `disguise_trans_query/3' rewrites Gloria goals inside out
+      // (load_agent_code / prolog_agent / gloria_step -> gloria:...) and
+      // leaves anything else unchanged, so ordinary top-level use is
+      // unaffected.
+      //
+      // The interception point is ToplevelProc.prototype.trans_query,
+      // because run_query calls it for *every* query (user and load) and it
+      // is where toplevelCfg.custom_run_query and toplevelCfg.special_query
+      // are applied -- patching here means the special_query actions
+      // (read_code -> upload the editor to the worker) still fire while the
+      // *original* functor (`load_agent_code', `prolog_agent', ...) is
+      // matched, and the rewriting then only has to change tr.q.
+      //
+      // ciao-prolog.js is imported asynchronously by lpdoc.js, so the patch
+      // is installed as soon as ToplevelProc shows up (it must not be
+      // installed at DOMContentLoaded: the class does not exist yet, which
+      // is exactly what made the previous attempt die with a ReferenceError).
+      // --------------------------------------------------------------------
+      function pg_install_rewriting() {
+        if (typeof ToplevelProc === 'undefined') return false;
+        if (ToplevelProc.prototype.pg_rewriting_installed) return true;
+        const orig_trans_query = ToplevelProc.prototype.trans_query;
+        ToplevelProc.prototype.trans_query = async function (query) {
+          const tr = await orig_trans_query.call(this, query);
+          // (init_queries/use_module etc. keep their original goal; only the
+          // user-facing Gloria goals and the load query are wrapped)
+          const q = String(tr.q).trim();
+          if (q !== '') tr.q = pg_rewrite_goal(q);
+          return tr;
         };
+        ToplevelProc.prototype.pg_rewriting_installed = true;
+        return true;
+      }
+      // The rewriting wrapper: disguise_trans_query/3 rewrites *inside* the
+      // `gloria' scope and returns Q unchanged when the query is not Gloria's.
+      // (Both `gloria' and `disguise_trans_query/3' are loaded by
+      // toplevelCfg.init_queries, so nothing has to be imported per query.)
+      //
+      // The playground hands run_query a query *without* a final period
+      // (`Comint.#current_input` strips it, and `load_code` never adds one),
+      // and `query_one_begin` wants exactly that: a period must NOT be
+      // appended here or the worker answers "SYNTAX ERROR: Malformed query".
+      // Strip a period defensively (a directly-issued query may carry one)
+      // but never add one.
+      function pg_rewrite_goal(q) {
+        let body = String(q).trim();
+        if (body.endsWith('.')) body = body.slice(0, -1).trim();
+        return 'disguise_trans_query((' + body + '), _, Q), Q';
       }
       window.addEventListener('DOMContentLoaded', () => {
-        install_disguise_trans_query();
+        if (pg_install_rewriting()) return;
+        // ToplevelProc not defined yet: wait for ciao-prolog.js.
+        const timer = setInterval(() => {
+          if (pg_install_rewriting()) clearInterval(timer);
+        }, 50);
       });
     </script>
   </head>
@@ -262,6 +305,7 @@ def main():
     page = PAGE % {
         'splash': js_str(splash_code(agents)),
         'examples': '\n'.join(examples_menu(agents)),
+        'srcpath': BUNDLE_SRCDIR,
     }
     path = os.path.join(ROOT, 'playground', 'gloria.html')
     with open(path, 'w', encoding='utf-8') as f:

@@ -34,17 +34,23 @@
     is fine in Ciao; it is only user modules, whose predicate names are not
     visible as module-qualified goals, that fail.
 
-    Entry point (see the page's `install_disguise_trans_query`):
+    Entry point (see the page's `pg_rewrite_goal`):
 
         ?- use_module(library(gloria/gloria_playground),
                       [disguise_trans_query/3]),
-           disguise_trans_query(Query, R, Q), R = ok, Q.
+           disguise_trans_query((Query), _, Q), Q.
 
-    Query is the text the user typed, Q is the rewritten goal, and R is
-    `ok` when it was actually rewritten.  The first argument is read as a
-    term (not met/1) on purpose: it is called from JavaScript, so no
-    variables can have been bound by an earlier goal, and a typo does not
-    need to distinguish "parser error" from "not a Gloria query".
+    Query is the goal the user typed and Q is the (possibly rewritten) goal
+    to run: for a Gloria goal the engine is made visible by the `gloria:'
+    qualification, and for anything else Q is Query unchanged, so ordinary
+    top-level use is unaffected.  The second argument reports `ok' when a
+    rewrite happened and `none' otherwise (useful for tests; the page does
+    not need it).
+
+    The first argument is read as a term (not met/1) on purpose: it is
+    called from JavaScript, so no variables can have been bound by an
+    earlier goal, and a typo does not need to distinguish "parser error"
+    from "not a Gloria query".
 */
 
 :- module(gloria_playground, [disguise_trans_query/3], [assertions, isomodes]).

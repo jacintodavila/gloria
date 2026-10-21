@@ -264,6 +264,8 @@ gloria/                          # repo root == the bundle
 ```prolog
 :- bundle(gloria).
 depends([core, ciaowasm, builder]).   % graded installs for the wasm site build
+% library search paths (make library(gloria/gloria) resolvable in the bundle)
+alias_paths([library = 'ciao/gloria/src', library = 'src']).
 lib('ciao/gloria/src').               % the engine (library(gloria/gloria))
 lib('src').                           % the agent data under src/agents/
 
@@ -272,6 +274,10 @@ lib('src').                           % the agent data under src/agents/
     site_glob_cp(Bndl, 'playground', '*.html', '/playground'),
     site_glob_cp(Bndl, 'playground', '*.js', '/playground/js').
 ```
+
+(Only `alias_paths/1` creates the `library` aliases; `lib/1` alone declares
+build/install targets.  See §5.2.1 for why the *prebuilt* wasm engine still
+needs the sources imported by path.)
 
 (`dist_playground` is a hook of the `ciao_playground` bundle; it is what copies
 the page into `$CIAOROOT/build/site/playground/`.)
@@ -326,17 +332,23 @@ var toplevelCfg = {
   init_bundles: ['ciaowasm', 'core', 'builder', 'gloria'],
   init_queries: [
     'use_module(engine(internals), [reload_bundleregs/0])',
-    'use_module(library(classic/classic_predicates))'
-    // NOTE: library(gloria/gloria) is *not* imported into `user'
+    'use_module(library(classic/classic_predicates))',
+    // Load the engine and the rewriting helper into the worker by path:
+    "use_module('<srcdir>/ciao/gloria/src/gloria.pl')",
+    "use_module('<srcdir>/ciao/gloria/src/gloria_playground.pl'," +
+      ' [disguise_trans_query/3])'
   ],
   special_query: {
     'use_module':      { read_code: true, mark_errs: true },
     'load_agent_code': { read_code: true, mark_errs: true } // upload the editor first
   },
-  custom_load_query: m => "gloria_playground_load('" + m + "')",
-  custom_run_query:  q => q   // rewriting happens in Prolog, see below
+  custom_load_query: m => "load_agent_code('" + m + "')",
+  custom_run_query:  q => q   // the trans_query patch wraps it, see below
 };
 ```
+
+(`<srcdir>` is the bundle's source directory as seen inside the worker,
+`~/.ciao/gloria`; `mkpage.py` substitutes it — see §5.2.1.)
 
 ### 5.2.1 Reaching a single-module engine from the top level
 
@@ -348,7 +360,7 @@ user does not import the predicate from module gloria"*.
 Importing the whole engine into `user` would work but would also expose every
 private helper as an unqualified goal.  The page therefore keeps the top
 level clean and rewrites queries **in Prolog, inside the `gloria` scope**,
-with `disguise_trans_query/3` from `library(gloria/gloria_playground)`:
+with `disguise_trans_query/3` from `gloria_playground.pl`:
 
 ```
 load_agent_code(P) -> gloria:load_agent_code(P)
@@ -356,11 +368,68 @@ prolog_agent(...)  -> gloria:prolog_agent(...)
 gloria_step(...)   -> gloria:gloria_step(...)
 ```
 
-The page wraps `ToplevelProc.trans_query` (the same hook the s(CASP)
-playground uses): for a query that would fail as unknown it calls
-`disguise_trans_query(Query, R, Q), R = ok, Q` without adding it to the
-query history, and runs the result.  The load query is not rewritten at all
-(`custom_run_query` is a no-op): it is a loader operation, not a Gloria goal.
+`disguise_trans_query/3` rewrites *inside out* (so a query may combine
+several of these) and reports `none` -- returning the goal unchanged -- for
+anything that is not a Gloria goal, so ordinary top-level use is unaffected.
+
+**How the modules get in.**  Two things did *not* work and their failure is
+the reason for the current shape:
+
+* importing the engine into `user` -- exposes every private helper;
+* `use_module(library(gloria/gloria))` -- the prebuilt wasm engine's bundle
+  registry does not carry Gloria's `library` aliases, so this fails with
+  `existence_error(source_sink, library(gloria/gloria))`.  (`alias_paths/1`
+  was added to `Manifest/Manifest.pl` so a *rebuilt* engine resolves them;
+  the prebuilt engine has no such aliases.)
+
+The `.pl` sources **are** in the worker VFS, so `init_queries` imports them
+by path:
+
+```
+?- use_module('<srcdir>/ciao/gloria/src/gloria.pl').
+?- use_module('<srcdir>/ciao/gloria/src/gloria_playground.pl',
+              [disguise_trans_query/3]).
+```
+
+The page patches `ToplevelProc.prototype.trans_query`, calling the original
+first and then wrapping `tr.q`:
+
+```js
+toplevelCfg.custom_run_query = q => q;   // no JS-side rewrite
+// the patch:
+const tr = await orig_trans_query.call(this, query);
+const q = String(tr.q).trim().replace(/\.$/, '');   // strip a trailing period
+tr.q = 'disguise_trans_query((' + q + '), _, Q), Q'; // and do NOT add one back
+```
+
+Note the wrapper ends with `Q` and **no** period: `query_one_begin` (the
+worker entry point) requires an unterminated goal, and a trailing `.` makes
+it answer `{SYNTAX ERROR: Malformed query}`.  A trailing period from the
+caller is stripped defensively instead.
+
+`trans_query` is the right interception point because:
+
+* it is called by `run_query` for **every** query, user and load alike, and
+  it is inside `run_query`, so the original `run_query` still prints the
+  result (patching `run_query` itself would have to re-inject the solution
+  handling);
+* it applies `custom_run_query` and `special_query` **before** we wrap, so
+  the `read_code: true` of the `load_agent_code` entry still fires on the
+  original functor (`this.comint.pg.upload_code_to_worker()`); wrapping
+  first would hide it behind a leading `disguise_trans_query`;
+* the workspace `init_queries` are run through `muted_query_dumpout`, not
+  `trans_query`, so the boot sequence is untouched.
+
+The patch is installed as soon as `ToplevelProc` exists (it is imported
+asynchronously by `lpdoc.js`, so a `DOMContentLoaded` install dies with
+`ReferenceError: toplevel is not defined`).
+
+Two earlier attempts failed and are worth remembering: (a) wrapping
+`trans_query` with a sentinel check on `treat_outerr` never fires, because
+the playground reports an unknown goal as `cont === 'failed'` (a plain
+`no`), not as an "unknown command"; (b) a `custom_load_query` of
+`gloria_playground_load(...)` is undefined, which is what the user saw as
+`existence_error(procedure,'user:gloria_playground_load'/1)`.
 
 ### 5.2.2 Platform constraints
 

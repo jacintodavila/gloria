@@ -116,13 +116,38 @@ worker loads the wasm engine.
 ### 8. Verify the glue natively
 `load_agent_code/1` is exercised by `ciao/gloria/tests/t_playground.pl`, which
 replays the same golden scenarios as the parity harness through the generated
-`.pl` files:
+`.pl` files, and by `query_rewriting/0`, which checks the page's
+`disguise_trans_query/3` rewriting:
 
 ```bash
 ciao run ciao/gloria/tests/run_unittests.pl   # t_engine + t_playground
 ```
 
-### 9. Full wasm build
+### 9. Verify in a real browser
+The page is a genuine playground: `init_queries` imports the engine and the
+rewriting helper from the worker VFS, and a `ToplevelProc.prototype.trans_query`
+patch wraps each top-level query in `disguise_trans_query/3` (see
+`CIAO-PLAYGROUND-PROJECT.md` §5.2.1 for the design and the traps).
+
+Drive it headlessly with Chrome + CDP (the harness used during development is
+`/tmp/pg_gloria_e2e.js`; the essential steps are a hard reload, `Load ▶`, then
+a `prolog_agent(...)` query):
+
+```bash
+google-chrome --headless=new --remote-debugging-port=9222 --user-data-dir=/tmp/chr-prof &
+node /tmp/pg_gloria_e2e.js enclosure
+```
+
+Expected (same golden actions as the parity tests):
+
+```
+?- load_agent_code('/enclosure.pl').
+yes
+?- prolog_agent(enclosure, 0, 400, [time_day(am), it_is(sunny)], Actions).
+Actions = [do(shut(east_window),0),do(open(doors),0)]
+```
+
+### 10. Full wasm build
 ```bash
 ciao build --grade=wasm ciaowasm
 ciao install --grade=wasm -x ciaowasm
@@ -145,13 +170,15 @@ ciao custom_run ciao_playground dist_playground gloria
 | **Page validity** | `python3 playground/mkpage.py` then `node --check` on the page scripts | ✅ 6 example links, splash = enclosure agent |
 | **Wasm bundle** | `ciao install --grade=wasm builder gloria` | ✅ Installed (emcc 6.0.10) |
 | **Site** | `ciao custom_run ciao_playground dist dist_playground gloria` then `./serve_gloria.sh` | ✅ All assets 200 on `http://localhost:8000/playground/gloria.html` |
-| **In-browser query** | Load ▶ then `prolog_agent(...)` in the top level | ⏳ Needs a browser (Automated check limited to asset serving) |
+| **In-browser query** | Load ▶ then `prolog_agent(...)` in the top level | ✅ Verified headless (Chrome + CDP): `Actions = [do(shut(east_window),0),do(open(doors),0)]` |
 
 ## 🛠️ Troubleshooting
 
 | Issue | Likely Cause | Fix |
 |---|---|---|
-| `library(gloria/gloria)` not found in the page | Bundle not installed for the wasm grade | `ciao install --grade=wasm gloria` (with emcc on `PATH`) |
+| `library(gloria/gloria)` not found in the page | Bundle not installed for the wasm grade, or the prebuilt engine predates the `alias_paths/1` in `Manifest/Manifest.pl` | `ciao install --grade=wasm gloria` (with emcc on `PATH`); note the prebuilt engine has no Gloria `library` aliases, which is why the page imports the sources by path |
+| `{SYNTAX ERROR: Malformed query}` for every top-level query | The wrapped goal ends with a period; `query_one_begin` wants an unterminated goal | Do not append `.` in `pg_rewrite_goal` |
+| `ReferenceError: toplevel is not defined` at boot | The `trans_query` patch was installed at `DOMContentLoaded`, before `lpdoc.js` imported `ToplevelProc` | Install it as soon as `ToplevelProc` exists (poll) |
 | Page loads but nothing runs | Page assembled but not served from the site root | Serve `$CIAOROOT/build/site` (`./serve_gloria.sh`), not the repo |
 | Agent not built after `Load ▶` | No `:- module(<agent>, ...)` at the top of the editor | Keep the module directive: it gives the agent its name (the file path becomes `/<agent>.pl`) |
 | Wrong agent picked up | The editor's module name changed | The agent id *is* the module name; reload after renaming |
