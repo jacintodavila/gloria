@@ -17,5 +17,9 @@ start_server :-
     format('Server running on port ~w~n', [Port]).
 
 % Serve static files from the React build directory
-% The path must be absolute for http_reply_from_files to work reliably
-:- http_handler(root(.), http_reply_from_files('/home/jacinto/git/gloria/web/client/dist', []), [prefix]).
+% The path must be absolute for http_reply_from_files to work reliably.
+% It is derived from the repository root that api.pl has resolved.
+:- ( gloria_root_path('web/client/dist', ClientDist)
+    ->  http_handler(root(.), http_reply_from_files(ClientDist, []), [prefix])
+    ;   gloria_root_error
+    ).

@@ -1,8 +1,13 @@
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_json)).
 
-% Load Gloria
-:- consult('/home/jacinto/git/gloria/gloria.pl').
+% Load Gloria: locate the repository root and load the engine from it, so
+% that this server runs in any checkout (see gloria_root.pl).
+:- consult('../../gloria_root').
+:- ( set_gloria_root -> true ; gloria_root_error ).
+:- ( gloria_root_path('gloria.pl', EngineFile)
+    ->  consult(EngineFile)
+    ;   gloria_root_error ).
 
 % Mock state for single-user prototype
 :- dynamic current_session_agent/1.
@@ -18,7 +23,8 @@ is_dot(.) :- !.
 is_dot(..) :- !.
 
 get_examples(_Request) :-
-    directory_files('/home/jacinto/git/gloria/examples', Files),
+    gloria_root_path(examples, ExamplesDir),
+    directory_files(ExamplesDir, Files),
     exclude(is_dot, Files, Examples),
     reply_json_dict(json{examples: Examples}).
 
@@ -30,8 +36,9 @@ post_start_session(Request) :-
     retractall(current_session_agent(_)),
     assert(current_session_agent(Agent)),
     
-    atomic_list_concat(['/home/jacinto/git/gloria/examples/', AgentName, '/', AgentName, '.kb'], KBFile),
-    atomic_list_concat(['/home/jacinto/git/gloria/examples/', AgentName, '/', AgentName, '.main'], MainFile),
+    gloria_root_path(examples, ExamplesDir),
+    atomic_list_concat([ExamplesDir, '/', AgentName, '/', AgentName, '.kb'], KBFile),
+    atomic_list_concat([ExamplesDir, '/', AgentName, '/', AgentName, '.main'], MainFile),
     
     % Consult into the user module, as Gloria uses global predicates
     make_module(Agent, MainFile),

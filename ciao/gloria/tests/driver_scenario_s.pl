@@ -1,8 +1,15 @@
 %% driver_scenario_s.pl -- SWI scenario runner for the parity harness.
-%% Usage (run from the repo root):
+%% Usage:
 %%   swipl -q -g run_scenario ciao/gloria/tests/driver_scenario_s.pl -- <Agent> <KbPath> <StepsFile>
 %% Prints one canonicalized action-shape per time step (see term_shape.pl).
-:- consult('gloria.pl').
+%%
+%% The engine is located through gloria_root.pl, so the driver works from
+%% any working directory.
+:- consult('../../../gloria_root').
+:- ( set_gloria_root -> true ; gloria_root_error ).
+:- ( gloria_root_path('gloria.pl', EngineFile)
+    ->  consult(EngineFile)
+    ;   gloria_root_error ).
 :- ensure_loaded(term_shape).
 
 run_scenario :-

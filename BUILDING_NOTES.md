@@ -21,7 +21,7 @@ If the above doesn't work, you may need to add the bundle to Ciao's catalog. Cre
 
 ```prolog
 :- catalog(gloria).
-  location('/home/jacinto/git/gloria').
+  location('/path/to/gloria').
   activate.
 ```
 

@@ -1,12 +1,50 @@
 #!/bin/sh
 # parity_scenarios_check.sh -- run every example-agent scenario under both
 # engines (SWI vs Ciao) and diff the canonicalized per-step actions.
-# Run from the repo root.  Exit 0 iff every scenario matches.
+# Run it from anywhere:  ./ciao/gloria/tests/parity_scenarios_check.sh
+# Exit 0 iff every scenario matches.
+#
+# Overridable from the environment:
+#   SWIPL  -- the swipl binary  (default: swipl on $PATH)
+#   CIAO   -- the ciao binary  (default: ciao on $PATH, else a Ciao
+#             install under ~/.ciaoroot)
 set -e
-root="$(pwd)"
-SWIPL=/home/jacinto/bin/swipl
-CIAOPATH="$HOME/.ciaoroot/v1.25.0-m1/build/bin"
-tmp=/tmp/opencode
+
+# Repository root: derived from this script's own location, not from $PWD.
+# (this file lives in ciao/gloria/tests/, three levels below the root)
+root=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd)
+
+# The Ciao drivers refer to the example agents by their repo-relative
+# path, so run everything from the repository root.
+cd "$root"
+
+# SWI-Prolog interpreter.
+SWIPL="${SWIPL:-swipl}"
+if ! command -v "$SWIPL" >/dev/null 2>&1; then
+    echo "ERROR: swipl not found -- set \$SWIPL to its path" >&2
+    exit 1
+fi
+
+# Ciao interpreter: prefer the one on $PATH, else the newest install
+# under ~/.ciaoroot (the glob expands in ascending order, so the last
+# match is the newest).
+CIAO="${CIAO:-ciao}"
+if ! CIAOBIN=$(command -v "$CIAO" 2>/dev/null); then
+    CIAOBIN=""
+    for d in "$HOME"/.ciaoroot/*; do
+        if [ -x "$d/build/bin/ciao" ]; then
+            CIAOBIN="$d/build/bin/ciao"
+        fi
+    done
+fi
+if [ -z "$CIAOBIN" ]; then
+    echo "ERROR: ciao not found -- set \$CIAO to its path" >&2
+    exit 1
+fi
+
+# Scratch space for the intermediate files.
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT INT TERM
 fail=0
 
 run_one() {
@@ -17,7 +55,7 @@ run_one() {
     "$SWIPL" -q -g run_scenario "$root/ciao/gloria/tests/driver_scenario_s.pl" -- \
         "$agent" "$root/$kb" "$stepsfile" 2>/dev/null \
         > "$tmp/scen_s_$agent.txt" || true
-    ( export PATH="$CIAOPATH:$PATH"; timeout 120 ciao run \
+    ( export PATH="$(dirname -- "$CIAOBIN"):$PATH"; timeout 120 "$CIAOBIN" run \
         "$root/ciao/gloria/tests/driver_scenario_c.pl" \
         "$agent" "$root/$kb" "$stepsfile" < /dev/null 2>/dev/null ) \
         > "$tmp/scen_c_$agent.txt" || true

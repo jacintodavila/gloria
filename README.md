@@ -120,7 +120,7 @@ The playground includes 7 Active-Learning Documents:
 This project is licensed under the **GNU LESSER GENERAL PUBLIC LICENSE (LGPL3)** – see `COPYING` for full text.
 
 ## 📬 Contact
-- **Repository:** `/home/jacinto/git/gloria`
+- **Repository:** this checkout (the Gloria source tree)
 - **Author:** Gloria project (J. Davila)
 - **Ciao environment:** `CIAOROOT=$HOME/.ciaoroot/v1.25.0-m1-20260919145856`
 

@@ -18,12 +18,21 @@
 :- use_module(library(readutil)).
 :- use_module(library(lists)).
 
-:- ['/home/jacinto/git/gloria/gloria.pl'].
+% Locate the repository root and load the Gloria engine from it, so that
+% this worker runs in any checkout instead of only in the one whose
+% absolute path used to be hardcoded here (see gloria_root.pl).
+:- consult('../../gloria_root').
+:- ( set_gloria_root -> true ; gloria_root_error ).
+:- ( gloria_root_path('gloria.pl', EngineFile)
+    ->  consult(EngineFile)
+    ;   gloria_root_error ).
 
 :- dynamic session_time/3.       % session_time(Session, Agent, T)
 :- dynamic loaded_agent/1.
 
-examples_root('/home/jacinto/git/gloria/examples').
+examples_root(Root) :-
+    gloria_root(Repo),
+    directory_file_path(Repo, examples, Root).
 
 /*************************************************************** main loop */
 
