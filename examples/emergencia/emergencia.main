@@ -1,0 +1,15 @@
+tracefile('emergencia.dot').  % see flach/graphviz.pl
+for_testing_only(false).
+
+% abducible predicates
+%
+abd(emergencia).
+abd(pulsa_boton).
+
+% observable predicates
+%
+observable(emergencia).
+
+% built-in, user-defined predicates
+%
+user_built(true).

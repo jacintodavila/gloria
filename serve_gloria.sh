@@ -49,6 +49,15 @@ EOF
     exit 1
 fi
 
+# Keep the served page in sync with the page generated from this checkout.
+# `playground/gloria.html' embeds the agent sources (the Examples menu), so a
+# newly added agent only shows up after this copy.
+REPO_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ -f "$REPO_ROOT/playground/gloria.html" ]; then
+    cp "$REPO_ROOT/playground/gloria.html" "$SITE/playground/gloria.html"
+    echo "Synced               : playground/gloria.html"
+fi
+
 echo "Ciao playground site : $SITE"
 echo "Open                 : http://localhost:$PORT/playground/"
 echo "                       http://localhost:$PORT/playground/on-the-fly.html"

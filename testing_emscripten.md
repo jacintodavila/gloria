@@ -193,7 +193,7 @@ ciao custom_run ciao_playground dist_playground gloria
 gloria/
   Manifest/Manifest.pl          # bundle deps, builder hook for playground
   build.sh                       # local dev build/serve script
-  COPYING                       # LGPL3 license text
+  COPYING                       # AGPL-3.0-or-later license notice
   src/                          # engine files with :- module/2 headers
   examples/                      # original agent .g/.kb/.main files
   tests/                         # parity harness, unittest suite, scenarios

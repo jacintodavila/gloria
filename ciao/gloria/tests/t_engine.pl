@@ -13,10 +13,11 @@
 
 :- module(t_engine,
           [enclosure_scenario/0, burocratin_scenario/0,
-           gerente_scenario/0, arch_scenario/0],
+           gerente_scenario/0, arch_scenario/0,
+           emergencia_scenario/0],
           [assertions]).
 
-:- doc(title, "Gloria engine port tests (enclosure, burocratin, gerente, arch)").
+:- doc(title, "Gloria engine port tests (enclosure, burocratin, gerente, arch, emergencia)").
 
 :- use_module(library(format)).
 :- use_module('../src/gloria').
@@ -54,6 +55,14 @@ arch_scenario :-
     run_checks(arch0, 'examples/arch/ex-arch.kb',
                [[build(5), c(5), c(8), b(10)]],
                [[do(do(8), 0), do(do(8), 0), do(do_b(10), 0)]]).
+
+:- test emergencia_scenario
+   # "emergencia: [emergencia] -> do(pulsa_boton,0); no observation -> no actions".
+
+emergencia_scenario :-
+    run_checks(emergencia0, 'examples/emergencia/emergencia.kb',
+               [[emergencia], []],
+               [[do(pulsa_boton, 0)], []]).
 
 run_checks(Ag, Kb, Steps, Expected) :-
     run_steps(Ag, Kb, 0, Steps, Got),

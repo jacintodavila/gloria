@@ -1,0 +1,18 @@
+% emergencia.kb -- metas (if_/2) y creencias (def/2)
+%
+% Spec (espanol):
+%   Metas:
+%     Si ocurre una emergencia, consiga ayuda.
+%   Creencias:
+%     Ud consigue ayuda si alerta al conductor.
+%     Ud alerta al conductor si pulsa el boton de la senal de alarma.
+
+% ---------------------------------------------------------------- metas
+% Si ocurre una emergencia, consiga ayuda.
+if_(emergencia, [consigue_ayuda]).
+
+% ------------------------------------------------------------ creencias
+% Ud consigue ayuda si alerta al conductor.
+def(consigue_ayuda, alerta_conductor).
+% Ud alerta al conductor si pulsa el boton de la senal de alarma.
+def(alerta_conductor, pulsa_boton).

@@ -1,6 +1,6 @@
 # Project proposal: adopting Gloria as a Ciao package and standalone Ciao-Playground web application
 
-Status: draft (v0.2, updated 2026-10-13) — **WP0–WP4 DONE; WP5 (upstreaming) ongoing.** The native Ciao engine port is complete with **6/6 example-agent scenarios in parity** with SWI (enclosure, burocratin, gerente, arch, mylamp, rentin), the Ciao `unittest` suite is green, and the standalone `playground/gloria.html` scaffolding is in place. The full wasm build grade remains pending (§6, §9).
+Status: draft (v0.2, updated 2026-10-22) — **WP0–WP4 DONE; WP5 (upstreaming) ongoing.** The native Ciao engine port is complete with **7/7 example-agent scenarios in parity** with SWI (enclosure, burocratin, gerente, arch, mylamp, rentin, emergencia), the Ciao `unittest` suite is green, and the standalone `playground/gloria.html` scaffolding is in place. The full wasm build grade remains pending (§6, §9).
 Author: Gloria project (J. Davila) — for review by the Ciao team (CLIP group).
 
 > **Status update (2026-10-13).** Since the WP0 spike, the port has landed:
@@ -8,7 +8,7 @@ Author: Gloria project (J. Davila) — for review by the Ciao team (CLIP group).
 > `gloria_compat.pl`, `auxilia.pl`, `equiva.pl`, `rewrite.pl`, `implica.pl`,
 > `rplan.pl`, `gloria_body.pl`, `gloria_loader.pl`); `load_agent/2` reifies each
 > agent's `.kb`/`.main` into the shared database; the cross-engine harness
-> `ciao/gloria/tests/parity_scenarios_check.sh` is green for **all six**
+> `ciao/gloria/tests/parity_scenarios_check.sh` is green for **all seven**
 > example agents; `ciao run ciao/gloria/tests/run_unittests.pl` is green; and two
 > teaching agents were added: **`mylamp`** (motion-triggered lamp) under
 > `examples/mylamp/` and **`rentin`** (an opportunist that rationalises abuse)
@@ -244,15 +244,15 @@ gloria/                          # repo root == the bundle
     t_engine.pl term_shape.pl driver_*.pl
     t_playground.pl              # load_agent_code/1 + query rewriting on the page glue
   examples/
-    enclosure/ burocratin/ gerente/ arch/ mylamp/ rentin/   # .g sources, .kb/.main, readme.txt
+    enclosure/ burocratin/ gerente/ arch/ mylamp/ rentin/ emergencia/   # .g sources, .kb/.main, readme.txt
   playground/
     mkpage.py                    # generates gloria.html and agents/*.pl from src/agents/
     gloria.html                  # standalone app page (GENERATED - do not edit)
     agents/*.pl                  # self-contained agents (GENERATED - do not edit)
     alds/*.md                    # ALD notebooks (intro, enclosure, burocratin,
-                                 # gerente, arch, mylamp, rentin)
+                                 # gerente, arch, mylamp, rentin, emergencia)
   build.sh serve_gloria.sh        # local build/serve for development (see §6)
-  COPYING                         # LGPL3 notices
+  COPYING                         # AGPL-3.0-or-later license notice
 
 % SWI sources (gloria.pl, rplan.pl, implica.pl, equiva.pl, rewrite.pl,
 % auxilia.pl, gcompile.pl, tokenizer.pl) remain at the repo root for the SWI
@@ -292,7 +292,8 @@ the page into `$CIAOROOT/build/site/playground/`.)
 
 The page lets the visitor:
 
-1. Pick an agent (enclosure, burocratin, gerente, arch, mylamp, rentin) from
+1. Pick an agent (enclosure, burocratin, gerente, arch, mylamp, rentin,
+   emergencia) from
    the *Examples* menu; the agent's self-contained `.pl` text (knowledge base
    + configuration) loads into the editor. *(implemented)*
 2. Edit the agent and press *Load*; the page uploads the editor to the wasm
@@ -301,8 +302,11 @@ The page lets the visitor:
 3. Run a reasoning step in the top level, e.g.
    `?- prolog_agent(enclosure, 0, 400, [time_day(am), it_is(sunny)], Actions).`
    (or `gloria_step/7` to also see the pending goals); change the rules,
-   press *Load* again, and re-run. *(implemented; a dedicated control row
-   with a *Run step* / *Reset clock* pair is still planned)*
+   press *Load* again, and re-run.  The *Run agent* menu makes the syntax
+   visible: it lists the query for every agent/scenario and inserts the
+   selected one into the top level for inspection and execution.
+   *(implemented; a dedicated control row with a *Run step* / *Reset clock*
+   pair is still planned)*
 4. Inspect the trace: the engine writes the `# Gloria ...` reasoning trace
    on `user_error`, which the worker prints together with the solution.
    Rendering it in a preview pane (the `custom_postprint_sol` mechanism
@@ -322,7 +326,9 @@ var playgroundCfg = {
   splash_dialog: false,
   amend_on_save: false,   // the module directive names the agent
   on_the_fly: false,      // reload the agent only on demand
-  example_list: [ /* the six agents, as ?code=...&ext=.pl links */ ],
+  example_list: [ /* the seven agents, as ?code=...&ext=.pl links */ ],
+  // The generated page also adds a "Run agent" dropdown with the Prolog
+  // query for each agent/scenario (see AGENT_RUNS in playground/mkpage.py).
   has_load_button: true, has_examples_button: true, /* ... */
   has_doc_button: false, has_run_tests_button: false, /* agent data, not modules */
 };
@@ -514,8 +520,8 @@ directly from `ciao/gloria/` without the builder:
 
 ```sh
 export PATH="$HOME/.ciaoroot/v1.25.0-m1-20260919145856/build/bin:$PATH"
-./ciao/gloria/tests/parity_scenarios_check.sh   # 6/6 PARITY OK
-ciao run ciao/gloria/tests/run_unittests.pl      # status=0, 4/4 passed
+./ciao/gloria/tests/parity_scenarios_check.sh   # 7/7 PARITY OK
+ciao run ciao/gloria/tests/run_unittests.pl      # status=0, 13/13 passed
 ```
 
 `ciao build --bin gloria` still needs the bundle reachable from `CIAOROOT` /
@@ -577,7 +583,7 @@ so the plan centers on a **parity harness**:
    observation) diagnostics.
 
 Acceptance criteria: all golden scenarios pass identically on the three
-backends; no `# Gloria` trace line is lost; the six example agents run from a
+backends; no `# Gloria` trace line is lost; the seven example agents run from a
 clean browser session without a server.
 
 ---
@@ -613,10 +619,10 @@ Playground spreads examples.
 | WP | Deliverable | Milestone / exit criteria | Effort (est.) |
 | --- | --- | --- | --- |
 | 0 | Feasibility spike | **DONE** — port `gloria.pl`+`rplan.pl`+`implica.pl` minimal path, run `prolog_agent/5` under native Ciao; parity harness skeleton | 1 week |
-| 1 | Engine port | **DONE** — all six engine files + `gloria_compat.pl`; `gloria.pl` module header (exports: `prolog_agent/5, gloria_step/7, load_agent/2, load_agent_code/1, induce_spec/4`); `:- module/2` headers added to rplan, implica, equiva, rewrite, auxilia; dynamic declarations preserved; unittest suite green and **6/6 example agents** in parity | 2-3 weeks |
+| 1 | Engine port | **DONE** — all six engine files + `gloria_compat.pl`; `gloria.pl` module header (exports: `prolog_agent/5, gloria_step/7, load_agent/2, load_agent_code/1, induce_spec/4`); `:- module/2` headers added to rplan, implica, equiva, rewrite, auxilia; dynamic declarations preserved; unittest suite green and **7/7 example agents** in parity | 2-3 weeks |
 | 2 | Bundle packaging | **DONE** — `Manifest.pl`, `build.sh`, golden scenarios green on native Ciao; agents under `examples/` (loader reads `.kb`/`.main` sibling files) and under `src/agents/` (copies of `.kb`/`.main` for module layout); `ciao install gloria` placeholder for future pipeline integration | 1 week |
-| 3 | wasm + app | **DONE** — wasm engine (`ciao build --grade=wasm ciaowasm`), `ciao install --grade=wasm builder` + `--grade=wasm gloria`; `playground/gloria.html` generated by `playground/mkpage.py` (splash = self-contained agent, Examples menu = the six agents as `?code=` links); served by `serve_gloria.sh`; `load_agent_code/1` covered by `ciao/gloria/tests/t_playground.pl`. *Remaining:* the dedicated step/reset control row and the `custom_postprint_sol` trace preview | 2-3 weeks |
-| 4 | Docs + ALDs | **DONE** — LPdoc `gloria` manual (existing doc structure); 7 ALD notebooks created and runnable in the public playground (intro, enclosure, burocratin, gerente, arch, mylamp, rentin) | 1-2 weeks |
+| 3 | wasm + app | **DONE** — wasm engine (`ciao build --grade=wasm ciaowasm`), `ciao install --grade=wasm builder` + `--grade=wasm gloria`; `playground/gloria.html` generated by `playground/mkpage.py` (splash = self-contained agent, Examples menu = the seven agents as `?code=` links); served by `serve_gloria.sh`; `load_agent_code/1` covered by `ciao/gloria/tests/t_playground.pl`. *Remaining:* the dedicated step/reset control row and the `custom_postprint_sol` trace preview | 2-3 weeks |
+| 4 | Docs + ALDs | **DONE** — LPdoc `gloria` manual (existing doc structure); 8 ALD notebooks created and runnable in the public playground (intro, enclosure, burocratin, gerente, arch, mylamp, rentin, emergencia) | 1-2 weeks |
 | 5 | Upstreaming | Submit bundle + hooks to the Ciao team; get `gloria.html` on ciao-lang.org | ongoing |
 
 Total ~2-3 months of part-time work. Risks and mitigations:
@@ -631,11 +637,11 @@ Total ~2-3 months of part-time work. Risks and mitigations:
 - **wasm-only gaps.** Some I/O / filesystem op may behave differently on
   Emscripten -> the browser runtime avoids files entirely (VFS text files only,
   like s(CASP)'s `draft.html`).
-- **Licensing.** Gloria is GPL-2; Ciao core and the playground bundle are
-  LGPL-3. Bundles ship with their own licenses today (s(CASP) is Apache/BSD),
-  but confirm with the Ciao team whether a GPL bundle in the ciao-lang.org
-  build is acceptable, or whether Gloria should be offered (by its author) under
-  LGPL as well.
+- **Licensing.** Gloria is AGPL-3.0-or-later. The Ciao port under
+  `ciao/gloria/src/` is dual-licensed AGPL-3.0-or-later OR LGPL-3.0-or-later, so
+  it can be combined with Ciao (whose libraries ship LGPL-3) and with the
+  playground bundle. Third-party material under `flach/` keeps its own terms;
+  see `LICENSING.md`.
 - **Engineering ownership.** The engine is single-author legacy code ->
   keep the port's diffs against `*.orig` files readable, document every
   behavioral deviation in `gloria-utils` and the manual.
