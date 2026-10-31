@@ -1,0 +1,17 @@
+% vigilante.kb -- metas (if_/2) y creencias (def/2)
+%
+% Metas:
+%   Si llega un vehículo de cierta categoría, gestionar el acceso.
+%
+% Creencias:
+%   - Residente: abre portón.
+%   - Visitante: anota en cuaderno y abre portón.
+%   - Desconocido: niega acceso.
+
+% ---------------------------------------------------------------- metas
+if_(llega_vehiculo(Categoria), [gestionar_acceso(Categoria)]).
+
+% ------------------------------------------------------------ creencias
+def(gestionar_acceso(residente), abre_porton).
+def(gestionar_acceso(visitante), (anota_cuaderno, abre_porton)).
+def(gestionar_acceso(desconocido), niega_acceso).
