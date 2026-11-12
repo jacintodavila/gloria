@@ -14,10 +14,10 @@
 :- module(t_engine,
           [enclosure_scenario/0, burocratin_scenario/0,
            gerente_scenario/0, arch_scenario/0,
-           emergencia_scenario/0],
+           emergencia_scenario/0, piojo_scenario/0],
           [assertions]).
 
-:- doc(title, "Gloria engine port tests (enclosure, burocratin, gerente, arch, emergencia)").
+:- doc(title, "Gloria engine port tests (enclosure, burocratin, gerente, arch, emergencia, piojo)").
 
 :- use_module(library(format)).
 :- use_module('../src/gloria').
@@ -63,6 +63,20 @@ emergencia_scenario :-
     run_checks(emergencia0, 'examples/emergencia/emergencia.kb',
                [[emergencia], []],
                [[do(pulsa_boton, 0)], []]).
+
+:- test piojo_scenario
+   # "piojo: free+rested -> avanzar; obstacle+rested -> voltear_derecha; free+tired -> detenerse only".
+
+piojo_scenario :-
+    run_checks(piojo0, 'examples/piojo/piojo.kb',
+               [[frente_libre, descansado],
+                [frente_libre, descansado],
+                [obstaculo_al_frente, descansado],
+                [frente_libre, cansado]],
+               [[do(avanzar, 0)],
+                [do(avanzar, 1)],
+                [do(voltear_derecha, 2)],
+                [do(detenerse, 3)]]).
 
 run_checks(Ag, Kb, Steps, Expected) :-
     run_steps(Ag, Kb, 0, Steps, Got),

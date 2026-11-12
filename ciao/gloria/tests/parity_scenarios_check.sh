@@ -85,5 +85,7 @@ run_one rentin     examples/rentin/rentin.kb \
     '[[flojera,gano,no_hay_jueces_confiables,sin_observador],[flojera,gano,no_hay_jueces_confiables,observador_independiente]]'
 run_one emergencia examples/emergencia/emergencia.kb \
     '[[emergencia],[]]'
+run_one piojo      examples/piojo/piojo.kb \
+    '[[frente_libre,descansado],[frente_libre,descansado],[obstaculo_al_frente,descansado],[frente_libre,cansado]]'
 
 exit $fail

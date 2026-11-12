@@ -52,6 +52,7 @@ AGENTS = [
     ('arch',        'Arch (abduction example)',      'ex-arch.kb',     'ex-arch.main'),
     ('rentin',      'Rentin (opportunist)',          'rentin.kb',      'rentin.main'),
     ('emergencia',  'Emergencia (emergency help)',   'emergencia.kb',  'emergencia.main'),
+    ('piojo',       'Piojo (woodlouse, pure reactive)', 'piojo.kb',    'piojo.main'),
 ]
 
 DEFAULT_AGENT = 'enclosure'
@@ -92,6 +93,12 @@ AGENT_RUNS = {
     'emergencia': [
         ('emergency', 0, '[emergencia]'),
         ('quiet step (no observation)', 0, '[]'),
+    ],
+    'piojo': [
+        ('step 0 (front free, rested)', 0, '[frente_libre, descansado]'),
+        ('step 1 (front free, rested)', 1, '[frente_libre, descansado]'),
+        ('step 2 (obstacle, rested)', 2, '[obstaculo_al_frente, descansado]'),
+        ('step 3 (front free, tired)', 3, '[frente_libre, cansado]'),
     ],
 }
 

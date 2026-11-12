@@ -11,8 +11,8 @@ they behave identically:
   wasm browser playground.
 
 The port achieves **behavioral parity** with the SWI implementation across all
-seven example agents (enclosure, burocratin, gerente, arch, mylamp, rentin,
-emergencia) and includes a full **Ciao `unittest` suite**.
+eight example agents (enclosure, burocratin, gerente, arch, mylamp, rentin,
+emergencia, piojo) and includes a full **Ciao `unittest` suite**.
 
 | Path | What it is |
 |---|---|
@@ -203,7 +203,7 @@ printf '%s\n' \
 The replies are JSON objects with `"ok":true` (or `"ok":false` and an
 `"error"`). Note that `list_agents` returns every directory under `examples/`,
 which currently includes the auxiliary `taquilla` directory in addition to the
-seven documented agents.
+eight documented agents.
 
 Worker commands: `list_agents`, `agent_info`, `run_step`, `reset`, `quit`.
 
@@ -310,9 +310,9 @@ export PATH="$HOME/.ciaoroot/v1.25.0-m1/build/bin:$PATH"
 Adjust the path to whichever Ciao install works in your environment: some
 timestamped installs under `~/.ciaoroot/` are non-relocatable and fail with
 `exec: .../ciaoengine: not found`, while `v1.25.0-m1` works in this checkout.
-**Expected output:** All **7** agents show `PARITY: OK` with byte-identical
+**Expected output:** All **8** agents show `PARITY: OK` with byte-identical
 Ciao/SWI action lists (enclosure, burocratin, gerente, arch, mylamp, rentin,
-emergencia).
+emergencia, piojo).
 
 ### 2. Ciao unittest Suite
 ```bash
@@ -356,8 +356,8 @@ open http://localhost:8000/playground/gloria.html
 ```
 **You will see:**
 - The editor holding a self-contained Gloria agent (`enclosure` by default)
-- An *Examples* menu with the seven agents (enclosure, burocratin, gerente,
-  arch, mylamp, rentin, emergencia)
+- An *Examples* menu with the eight agents (enclosure, burocratin, gerente,
+  arch, mylamp, rentin, emergencia, piojo)
 - A *Run agent* menu with the Prolog query for each agent and scenario
   (e.g. `prolog_agent(emergencia, 0, 400, [emergencia], Actions).`).  Selecting
   an entry inserts the query into the top level; load the agent first
@@ -366,7 +366,7 @@ open http://localhost:8000/playground/gloria.html
   `?- prolog_agent(enclosure, 0, 400, [time_day(am), it_is(sunny)], Actions).`
 
 ### 6. ALD Notebooks
-The playground includes 8 Active-Learning Documents:
+The playground includes 9 Active-Learning Documents:
 - `alds/intro.md` – Gloria cycle: observables, abducibles, goals (`if_/2`), beliefs (`def/2`), time, actions (`do/2`)
 - `alds/enclosure.md` – Two-step scenario: `[time_day(am), it_is(sunny)]` → shut east + open doors; then pm/rainy → 3 actions
 - `alds/burocratin.md` – "sigo_procedimiento" example: `me_pide(juan, sacar_constancia)` → `do(lee(sacar_constancia),0)`
@@ -375,6 +375,7 @@ The playground includes 8 Active-Learning Documents:
 - `alds/mylamp.md` – Motion-triggered lamp: `motion(room)` → `do(switch_on(lamp1),0), do(log(room),0)`
 - `alds/rentin.md` – Opportunist who rationalises abuse: `[flojera, gano, no_hay_jueces_confiables, sin_observador]` → `do(no_trabajo,0), do(abuso,0)`; with `observador_independiente` → `do(no_trabajo,0)` only
 - `alds/emergencia.md` – Emergency help: `[emergencia]` → `do(pulsa_boton,0)`; no observation → no actions
+- `alds/piojo.md` – Woodlouse production system: free+rested → `do(avanzar,t)`; obstacle+rested → `do(voltear_derecha,t)`; free+tired → `do(detenerse,t)` only
 
 ## 📦 What's Included
 
@@ -393,9 +394,11 @@ The playground includes 8 Active-Learning Documents:
 
 ## 🛠️ Developer Notes
 
-### Native Ciao Engine (Already Verified)
-- `./ciao/gloria/tests/parity_scenarios_check.sh` – 7/7 agents **PARITY: OK**
-- `ciao run ciao/gloria/tests/run_unittests.pl` – `status=0`, **13/13 passed**
+### Native Ciao Engine
+- `./ciao/gloria/tests/parity_scenarios_check.sh` – 8/8 agents **PARITY: OK**
+- `ciao run ciao/gloria/tests/run_unittests.pl` – `status=0`, **15/15 passed**
+- (The `piojo` scenarios were added to both suites; re-run these commands in a
+  Ciao-enabled checkout to confirm.)
 - No errors/warnings in `gloria.pl` compilation
 
 ### Wasm/Emscripten (Future)

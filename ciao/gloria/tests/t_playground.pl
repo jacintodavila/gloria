@@ -20,7 +20,8 @@
 
 :- module(t_playground,
           [enclosure_pg/0, burocratin_pg/0, gerente_pg/0, arch_pg/0,
-           mylamp_pg/0, rentin_pg/0, emergencia_pg/0, query_rewriting/0],
+           mylamp_pg/0, rentin_pg/0, emergencia_pg/0, piojo_pg/0,
+           query_rewriting/0],
           [assertions]).
 
 :- doc(title, "Gloria playground glue tests (load_agent_code/1)").
@@ -90,6 +91,20 @@ emergencia_pg :-
     pg_checks('playground/agents/emergencia.pl',
               [[emergencia], []],
               [[do(pulsa_boton, 0)], []]).
+
+:- test piojo_pg
+   # "piojo: free+rested -> avanzar; obstacle+rested -> voltear_derecha; free+tired -> detenerse only".
+
+piojo_pg :-
+    pg_checks('playground/agents/piojo.pl',
+              [[frente_libre, descansado],
+               [frente_libre, descansado],
+               [obstaculo_al_frente, descansado],
+               [frente_libre, cansado]],
+              [[do(avanzar, 0)],
+               [do(avanzar, 1)],
+               [do(voltear_derecha, 2)],
+               [do(detenerse, 3)]]).
 
 :- test query_rewriting
    # "the page's disguise_trans_query/3 rewrites Gloria goals into the gloria module".
