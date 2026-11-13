@@ -182,8 +182,9 @@ def gloria_run_step(agent: str, input: str, session: str = "default") -> dict:
 
 
 def gloria_reset(agent: str = "_all_", session: str = "default") -> dict:
-    """Forget the internal clock for one agent/session (or all if agent is
-    '_all_'), so the next run_step restarts at time 0."""
+    """Forget the internal clock and the working memory for one agent/session
+    (or all agents if `agent` is '_all_'), so the next run_step restarts at
+    time 0 with no remembered spaces."""
     return _worker.reset(agent, session)
 
 
@@ -230,8 +231,9 @@ def main() -> None:
         name="gloria_reset",
         title="Reset a Gloria session",
         description=(
-            "Forget the internal clock for one agent/session (or all agents if "
-            "agent is '_all_'), so the next run_step restarts at time 0."
+            "Forget the internal clock and the working memory for one "
+            "agent/session (or all agents if agent is '_all_'), so the next "
+            "run_step restarts at time 0 with no remembered spaces."
         ),
     )
 

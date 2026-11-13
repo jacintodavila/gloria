@@ -105,7 +105,7 @@ demo_rules(Ag, R,  _, FlagCN, InGoals, OutGoals ) :-
   G \= not(_),
   builtin( Ag, G ), !,
   % writef(" % -> processing built-in %q -> \n",[G]),
-  ( G -> NewFirstPlan = [Abds, ( Cont :: Rest, UCRest), CN, HF, M]
+  ( Ag:G -> NewFirstPlan = [Abds, ( Cont :: Rest, UCRest), CN, HF, M]
   ;      NewFirstPlan = [Abds, ( Cont :: ([], true), true), CN, HF, M] ),
   NewR is R - 1,
   [NewFirstPlan|AltGoals] equiv NextGoals,

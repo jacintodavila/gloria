@@ -53,6 +53,7 @@ AGENTS = [
     ('rentin',      'Rentin (opportunist)',          'rentin.kb',      'rentin.main'),
     ('emergencia',  'Emergencia (emergency help)',   'emergencia.kb',  'emergencia.main'),
     ('piojo',       'Piojo (woodlouse, pure reactive)', 'piojo.kb',    'piojo.main'),
+    ('marciano',    'Marciano (Mars explorer with coordinate map)', 'marciano.kb', 'marciano.main'),
 ]
 
 DEFAULT_AGENT = 'enclosure'
@@ -99,6 +100,20 @@ AGENT_RUNS = {
         ('step 1 (front free, rested)', 1, '[frente_libre, descansado]'),
         ('step 2 (obstacle, rested)', 2, '[obstaculo_al_frente, descansado]'),
         ('step 3 (front free, tired)', 3, '[frente_libre, cansado]'),
+    ],
+    'marciano': [
+        ('step 0 at (0,0) facing east, free', 0,
+         '[posicion(0,0), orientacion(este), frente_libre]'),
+        ('step 1 at (1,0) facing east, free', 1,
+         '[posicion(1,0), orientacion(este), frente_libre]'),
+        ('step 2 at (2,0) facing east, obstacle', 2,
+         '[posicion(2,0), orientacion(este), obstaculo_al_frente]'),
+        ('step 3 at (2,0) facing south, obstacle', 3,
+         '[posicion(2,0), orientacion(sur), obstaculo_al_frente]'),
+        ('step 4 at (2,0) facing west, free (visited)', 4,
+         '[posicion(2,0), orientacion(oeste), frente_libre]'),
+        ('step 5 at (2,0) facing north, life at (2,1)', 5,
+         '[posicion(2,0), orientacion(norte), vida]'),
     ],
 }
 

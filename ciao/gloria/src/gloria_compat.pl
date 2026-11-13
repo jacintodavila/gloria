@@ -131,30 +131,62 @@ gensym(Base, Sym) :-
 
 /*************************************************** agent_goal/2 */
 % Evaluates a goal `G` in the agent's context, the way SWI did by
-% executing it inside the agent module.  Order of resolution:
-%   1. agent_fact(Ag, G)      -- a plain fact asserted from the .main
-%   2. agent_rule(Ag, H, B)   -- a plain clause asserted from the .main
-%   3. call(G)                -- engine-level / ISO / classic builtin
-% The builtin branches of demo_rules and demo_one_cond use this instead
-% of executing `G` directly (which would fail in Ciao for facts/rules
-% that live in the SWI agent module).
+% executing it inside the agent module.  Resolution order:
+%   1. working-memory predicates (memoriza/1, recuerda/1, no_recuerda/1)
+%   2. the agent's plain facts/rules from the .main file
+%   3. call(G) -- engine-level / ISO / classic builtin
+% A predicate that the agent itself defines is authoritative: if its body
+% fails, the goal fails instead of falling through to call/1 (which would
+% raise "undefined predicate" for a name that only lives in the agent file).
 
 agent_goal(Ag, G) :-
-    agent_fact(Ag, G).
+    nonvar(G),
+    G = not(P),
+    !,
+    \+ agent_goal(Ag, P).
+
 agent_goal(Ag, G) :-
+    (   memory_term(G)
+    ->  agent_goal_memory(Ag, G)
+    ;   agent_defined(Ag, G)
+    ->  agent_goal_agent(Ag, G)
+    ;   call(G)
+    ).
+
+memory_term(G) :-
+    nonvar(G),
+    functor(G, F, _),
+    ( F == memoriza ; F == recuerda ; F == no_recuerda ).
+
+agent_goal_memory(Ag, memoriza(X)) :- !,
+    (   agent_fact(Ag, recuerda(X))
+    ->  true
+    ;   assertz(agent_fact(Ag, recuerda(X))) ).
+agent_goal_memory(Ag, recuerda(X)) :- !,
+    agent_fact(Ag, recuerda(X)).
+agent_goal_memory(Ag, no_recuerda(X)) :- !,
+    \+ agent_fact(Ag, recuerda(X)).
+
+agent_defined(Ag, G) :-
+    agent_fact(Ag, G).
+agent_defined(Ag, G) :-
+    agent_rule(Ag, H, _),
+    G = H.
+
+agent_goal_agent(Ag, G) :-
+    agent_fact(Ag, G).
+agent_goal_agent(Ag, G) :-
     agent_rule(Ag, H, B),
     G = H,
     agent_goal_body(Ag, B).
-agent_goal(_Ag, G) :-
-    call(G).
 
 agent_goal_body(_Ag, true) :- !.
 agent_goal_body(Ag, (A, B)) :- !,
     agent_goal(Ag, A),
     agent_goal_body(Ag, B).
 agent_goal_body(Ag, (A; B)) :- !,
-    (   call(A)
-    ;   call(B)
+    (   agent_goal(Ag, A)
+    ;   agent_goal(Ag, B)
     ).
 agent_goal_body(Ag, not(P)) :- !,
     \+ agent_goal(Ag, P).

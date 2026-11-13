@@ -113,8 +113,13 @@ handle_cmd('reset', Request, Reply) :-
     to_atom(Request.agent, Agent),
     to_atom(Request.session, Session),
     (   Agent == '_all_'
-    ->  retractall(session_time(Session, _, _))
-    ;   retractall(session_time(Session, Agent, _)) ),
+    ->  retractall(session_time(Session, _, _)),
+        findall(A, loaded_agent(A), Loaded),
+        forall(member(A, Loaded), unload_agent(A))
+    ;   retractall(session_time(Session, Agent, _)),
+        (   loaded_agent(Agent)
+        ->  unload_agent(Agent)
+        ;   true ) ),
     Reply = json{ok:true, reset: Agent, session: Session}.
 
 handle_cmd('ping', _Request, Reply) :-
@@ -198,7 +203,7 @@ term_head_functor(T, K) :-
 fixed_user_predicates([ 'abd'/1, 'observable'/1, 'if_'/2, 'if'/2, 'def'/2,
                         'user_built'/1, 'for_testing_only'/1, 'tracefile'/1,
                         'goalsmem'/3, 'actionsmem'/4, 'ghistory'/1,
-                        'current_time'/1 ]).
+                        'current_time'/1, 'recuerda'/1 ]).
 
 /*********************************************************** file discovery */
 

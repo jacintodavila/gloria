@@ -21,7 +21,7 @@
 :- module(t_playground,
           [enclosure_pg/0, burocratin_pg/0, gerente_pg/0, arch_pg/0,
            mylamp_pg/0, rentin_pg/0, emergencia_pg/0, piojo_pg/0,
-           query_rewriting/0],
+           marciano_pg/0, query_rewriting/0],
           [assertions]).
 
 :- doc(title, "Gloria playground glue tests (load_agent_code/1)").
@@ -106,6 +106,24 @@ piojo_pg :-
                [do(voltear_derecha, 2)],
                [do(detenerse, 3)]]).
 
+:- test marciano_pg
+   # "marciano: coordinate map scenario, same golden actions as t_engine".
+
+marciano_pg :-
+    pg_checks('playground/agents/marciano.pl',
+              [[posicion(0,0), orientacion(este), frente_libre],
+               [posicion(1,0), orientacion(este), frente_libre],
+               [posicion(2,0), orientacion(este), obstaculo_al_frente],
+               [posicion(2,0), orientacion(sur), obstaculo_al_frente],
+               [posicion(2,0), orientacion(oeste), frente_libre],
+               [posicion(2,0), orientacion(norte), vida]],
+              [[do(avanzar, 0)],
+               [do(avanzar, 1)],
+               [do(voltear_derecha, 2)],
+               [do(voltear_derecha, 3)],
+               [do(voltear_derecha, 4)],
+               [do(reportar((2,1)), 5), do(voltear_derecha, 5)]]).
+
 :- test query_rewriting
    # "the page's disguise_trans_query/3 rewrites Gloria goals into the gloria module".
 
@@ -135,6 +153,7 @@ pg_agent(Path, Ag) :-
 
 pg_checks(Path, Steps, Expected) :-
     pg_agent(Path, Ag),
+    gloria:load_agent_code(Path),
     pg_run_steps(Ag, Path, 0, Steps, Got),
     (   Got = Expected
     ->  true
@@ -146,7 +165,6 @@ pg_checks(Path, Steps, Expected) :-
 
 pg_run_steps(_, _, _, [], []).
 pg_run_steps(Ag, Path, T, [In|Rest], [Acts|More]) :-
-    gloria:load_agent_code(Path),
     gloria:gloria_step(Ag, T, 400, In, _NextGs, _OutGs, Acts),
     T1 is T + 1,
     pg_run_steps(Ag, Path, T1, Rest, More).

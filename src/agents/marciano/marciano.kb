@@ -1,0 +1,64 @@
+% marciano.kb -- metas (if_/2) y creencias (def/2)
+%
+% Spec (espanol):
+%   Ud es un robot explorador enviado a Marte en busca de rastros de vida
+%   marciana.  El terreno es una cuadricula de cuadrados unitarios: cada
+%   cuadrado se identifica con coordenadas (E,N), donde E crece hacia el
+%   Este y N hacia el Norte desde el origen.  Ud comienza en (0,0) mirando
+%   al Este y avanza exactamente un cuadrado por paso.
+%
+%   Ud conoce su posicion y orientacion actuales, y usa aritmetica simple
+%   para calcular las coordenadas del cuadrado de adelante y del cuadrado a
+%   la derecha.  Cada vez que pasa a un cuadrado nuevo registra su
+%   observacion en un mapa; para saber si ya estuvo alli consulta ese mapa.
+%
+%   Sistema de produccion con memoria (reglas, en orden de prioridad):
+%     1. Si el cuadrado de adelante esta frente_libre y ya lo visite,
+%        entonces volteo a la derecha.
+%     2. Si el cuadrado de adelante esta frente_libre y no lo he visitado,
+%        entonces avanzo a el (y registro la visita).
+%     3. Si el cuadrado de adelante tiene un obstaculo_al_frente sin vida,
+%        entonces volteo a la derecha.
+%     4. Si el cuadrado de adelante tiene vida,
+%        entonces reporto sus coordenadas al centro de control y volteo a
+%        la derecha.
+%
+% Nota de codificacion:
+%   * `posicion/2` y `orientacion/1` las reporta el cuerpo en cada paso.
+%     El agente calcula `adelante/5` con aritmetica (ver marciano.main).
+%   * La memoria es el conjunto de hechos `recuerda(mapa((E,N),Estado))` y
+%     `recuerda(visitado((E,N)))`; se consulta con `visitado/1`,
+%     `no_visitado/1` y se actualiza con `registra_visita/1` y
+%     `registra_observacion/2`.
+%   * La regla "ya lo visite" va ANTES de la regla "no lo visite": el motor
+%     evalua en orden de fuente y la primera regla que se satisface gana.
+%     Asi, al llegar a un cuadrado nuevo solo dispara `avanzar` (que ademas
+%     lo marca visitado) y no `voltear_derecha`.
+%   * `frente_libre`, `obstaculo_al_frente` y `vida` son observaciones mutuamente excluyentes.
+
+% ---------------------------------------------------------------- metas
+% 1. El cuadrado de adelante esta frente_libre pero ya lo visite: volteo a la
+%    derecha.
+if_((posicion(E, N), orientacion(D), frente_libre,
+     adelante(E, N, D, E2, N2), visitado((E2, N2))),
+    [voltear_derecha]).
+
+% 2. El cuadrado de adelante esta frente_libre y es nuevo: avanzo y registro la
+%    visita.
+if_((posicion(E, N), orientacion(D), frente_libre,
+     adelante(E, N, D, E2, N2), no_visitado((E2, N2)),
+     registra_visita((E2, N2))),
+    [avanzar]).
+
+% 3. Hay un obstaculo_al_frente sin vida adelante: lo registro y volteo a la derecha.
+if_((posicion(E, N), orientacion(D), obstaculo_al_frente,
+     adelante(E, N, D, E2, N2),
+     registra_observacion((E2, N2), obstaculo_al_frente)),
+    [voltear_derecha]).
+
+% 4. Hay vida adelante: reporto sus coordenadas al centro de control y
+%    volteo a la derecha.
+if_((posicion(E, N), orientacion(D), vida,
+     adelante(E, N, D, E2, N2),
+     registra_observacion((E2, N2), vida)),
+    [reportar((E2, N2)), voltear_derecha]).

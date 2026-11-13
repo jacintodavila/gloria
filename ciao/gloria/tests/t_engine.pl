@@ -14,10 +14,11 @@
 :- module(t_engine,
           [enclosure_scenario/0, burocratin_scenario/0,
            gerente_scenario/0, arch_scenario/0,
-           emergencia_scenario/0, piojo_scenario/0],
+           emergencia_scenario/0, piojo_scenario/0,
+           marciano_scenario/0],
           [assertions]).
 
-:- doc(title, "Gloria engine port tests (enclosure, burocratin, gerente, arch, emergencia, piojo)").
+:- doc(title, "Gloria engine port tests (enclosure, burocratin, gerente, arch, emergencia, piojo, marciano)").
 
 :- use_module(library(format)).
 :- use_module('../src/gloria').
@@ -78,7 +79,26 @@ piojo_scenario :-
                 [do(voltear_derecha, 2)],
                 [do(detenerse, 3)]]).
 
+:- test marciano_scenario
+   # "marciano: coordinate map; free+unvisited -> avanzar; free+visited -> turn; obstacle -> turn; life -> report+turn".
+
+marciano_scenario :-
+    run_checks(marciano0, 'examples/marciano/marciano.kb',
+               [[posicion(0,0), orientacion(este), frente_libre],
+                [posicion(1,0), orientacion(este), frente_libre],
+                [posicion(2,0), orientacion(este), obstaculo_al_frente],
+                [posicion(2,0), orientacion(sur), obstaculo_al_frente],
+                [posicion(2,0), orientacion(oeste), frente_libre],
+                [posicion(2,0), orientacion(norte), vida]],
+               [[do(avanzar, 0)],
+                [do(avanzar, 1)],
+                [do(voltear_derecha, 2)],
+                [do(voltear_derecha, 3)],
+                [do(voltear_derecha, 4)],
+                [do(reportar((2,1)), 5), do(voltear_derecha, 5)]]).
+
 run_checks(Ag, Kb, Steps, Expected) :-
+    gloria:load_agent(Ag, Kb),
     run_steps(Ag, Kb, 0, Steps, Got),
     (   Got = Expected
     ->  true
@@ -90,7 +110,6 @@ run_checks(Ag, Kb, Steps, Expected) :-
 
 run_steps(_, _, _, [], []).
 run_steps(Ag, Kb, T, [In|Rest], [Acts|More]) :-
-    gloria:load_agent(Ag, Kb),
     gloria:gloria_step(Ag, T, 400, In, _NextGs, _OutGs, Acts),
     T1 is T + 1,
     run_steps(Ag, Kb, T1, Rest, More).
