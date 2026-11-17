@@ -43,7 +43,11 @@ post_start_session(Request) :-
     % Consult into the user module, as Gloria uses global predicates
     make_module(Agent, MainFile),
     make_module(Agent, KBFile),
-    
+
+    % Starting a session clears the agent's working memory (see memoriza/1
+    % in gloria.pl), so a new run does not inherit visited spaces.
+    retractall(recuerda(_)),
+
     retractall(current_session_time(_)),
     assert(current_session_time(0)),
     

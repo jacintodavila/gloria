@@ -1,0 +1,93 @@
+tracefile('marciano.dot').  % see flach/graphviz.pl
+for_testing_only(false).
+
+% abducible predicates
+%
+% Sensations.  The body reports the robot's current square and heading, and
+% the life-recognition module reports what it sees in the square directly
+% ahead: `frente_libre`, `obstaculo_al_frente` (an obstacle without life) or `vida` (an
+% obstacle with signs of life).
+abd(posicion).
+abd(orientacion).
+abd(frente_libre).
+abd(obstaculo_al_frente).
+abd(vida).
+
+% Actions the robot can perform.
+abd(avanzar).
+abd(voltear_derecha).
+abd(reportar).
+
+% observable predicates
+%
+observable(posicion(_,_)).
+observable(orientacion(_)).
+observable(frente_libre).
+observable(obstaculo_al_frente).
+observable(vida).
+
+% built-in, user-defined predicates: coordinates, orientation and map memory
+%
+% The terrain is a grid of unit squares.  Square (0,0) is the origin; E grows
+% to the East and N to the North.  The robot starts at (0,0) facing East and
+% moves one square per step.
+%
+%   adelante(E,N,D,E2,N2) -- coordinates of the square ahead
+%   derecha(E,N,D,E2,N2)  -- coordinates of the square to the right
+%   visitado(P)           -- P is a square the robot has occupied
+%   no_visitado(P)        -- P is not in the visited set
+%   registra_visita(P)    -- mark P visited and record it as free
+%   registra_observacion(P, Estado) -- record Estado for P in the map
+user_built(adelante(_,_,_,_,_)).
+user_built(derecha(_,_,_,_,_)).
+user_built(visitado(_)).
+user_built(no_visitado(_)).
+user_built(registra_visita(_)).
+user_built(registra_observacion(_,_)).
+
+% ---------------------------------------------------------------- initial map
+% The robot starts at the origin, which is free and already visited.  Keeping
+% this as a `visitado/1` fact (instead of a `recuerda/1` fact) lets the same
+% .main work both when it is consulted into `user` (MCP server) and when it is
+% asserted into the agent module (web server): `recuerda/1` always refers to
+% the engine's working-memory store.
+visitado((0,0)).
+
+% ------------------------------------------------------ coordinate arithmetic
+% Coordinates of the square directly ahead, given the current square and the
+% heading.
+adelante(E, N, este,  E2, N)  :- E2 is E + 1.
+adelante(E, N, norte, E,  N2) :- N2 is N + 1.
+adelante(E, N, oeste, E2, N)  :- E2 is E - 1.
+adelante(E, N, sur,   E,  N2) :- N2 is N - 1.
+
+% Coordinates of the square to the right: the square that becomes "ahead"
+% after turning right.
+derecha(E, N, este,  E,  N2) :- N2 is N - 1.
+derecha(E, N, sur,   E2, N)  :- E2 is E - 1.
+derecha(E, N, oeste, E,  N2) :- N2 is N + 1.
+derecha(E, N, norte, E2, N)  :- E2 is E + 1.
+
+% ------------------------------------------------------------- map memory
+visitado(P) :-
+    recuerda(visitado(P)).
+
+no_visitado(P) :-
+    not(visitado(P)).
+
+% Record a square the robot has just moved into.  The square is free because
+% the robot occupies it.
+registra_visita(P) :-
+    memoriza(visitado(P)),
+    registra_mapa(P, frente_libre).
+
+% Record what the robot saw in a square (obstacle or life).
+registra_observacion(P, Estado) :-
+    registra_mapa(P, Estado).
+
+% Keep the first observation of a square (the world is static).
+registra_mapa(P, _Estado) :-
+    recuerda(mapa(P, _)).
+registra_mapa(P, Estado) :-
+    not(recuerda(mapa(P, _))),
+    memoriza(mapa(P, Estado)).

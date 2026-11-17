@@ -268,7 +268,7 @@ demo_one_cond(Ag, ExVars, Delta, InImp, OutImp, rule_applied, M, MF, ExVars ) :-
   InImp = ( Cont :: H if (G, Rest) @ HP ), 
   G \= not(_),
   builtin( Ag, G ), !,
-  ( G -> 
+  ( Ag:G -> 
     NewImp = ( Cont :: H if Rest @ HP )
   ; NewImp = ( Cont :: H if ([], Rest) @ [] ) ),
   demo_one_cond(Ag, ExVars, Delta, NewImp, OutImp, _, M, MF, ExVars ).

@@ -4,3 +4,4 @@ verification_summary.md
 readme
 gloria-review-and-plan.md
 *.dot
+.venv.bak-py312/

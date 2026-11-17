@@ -52,6 +52,8 @@ AGENTS = [
     ('arch',        'Arch (abduction example)',      'ex-arch.kb',     'ex-arch.main'),
     ('rentin',      'Rentin (opportunist)',          'rentin.kb',      'rentin.main'),
     ('emergencia',  'Emergencia (emergency help)',   'emergencia.kb',  'emergencia.main'),
+    ('piojo',       'Piojo (woodlouse, pure reactive)', 'piojo.kb',    'piojo.main'),
+    ('marciano',    'Marciano (Mars explorer with coordinate map)', 'marciano.kb', 'marciano.main'),
     ('vigilante',   'Vigilante (control de acceso)', 'vigilante.kb',   'vigilante.main'),
 ]
 
@@ -93,10 +95,6 @@ AGENT_RUNS = {
     'emergencia': [
         ('emergency', 0, '[emergencia]'),
         ('quiet step (no observation)', 0, '[]'),
-    ],
-    'vigilante': [
-        ('visitante', 0, '[llega_vehiculo(visitante)]'),
-        ('residente', 0, '[llega_vehiculo(residente)]'),
     ],
 }
 

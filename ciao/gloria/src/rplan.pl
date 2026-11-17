@@ -270,7 +270,7 @@ factoring( Ag, InGoals, OutGoals ) :-
   InGoals = [[Abds, ( Cont :: ( Pt, Rest ), UCRest), CN, HF, M]|AltGoals],
   suspendable( Ag, Pt ),
   ground(Pt), !,
-  clause(Pt,_),    % This is because we store some Abd in PROLOG's DB
+  safe_clause(Pt,_),    % This is because we store some Abd in PROLOG's DB
   write_ir(" % -> factoring/subsuming %q in DB -> \n", [Pt]), 
   OutGoals = [[Abds, ( Cont :: Rest, UCRest), CN, HF, M]|AltGoals].
 

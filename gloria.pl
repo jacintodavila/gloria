@@ -50,6 +50,7 @@
 % 	   now/1, toldtostop/0, lastaction/1, do/3, bg/1.
 
 :- dynamic def/2, if/2, goalsmem/3, actionsmem/4.
+:- dynamic recuerda/1.   % memoria de trabajo de los agentes (ver mas abajo)
 
 %
 % Warning:
@@ -347,6 +348,26 @@ bg(Ag, H:-B) :-
   Ag:def(H, B).
   % writef("#\n Gloria: Agent %w is checking on its def(%w,%w)", [Ag, H, B]).
   % to use Ag's rules as background knowledge
+
+/************************************************** memoria de trabajo */
+% A production system with memory needs a working memory that survives
+% from one reasoning step to the next.  Agents use these three predicates
+% as ordinary user_built/1 conditions:
+%
+%   memoriza(X)    -- record X in working memory (idempotent) and succeed
+%   recuerda(X)    -- succeed iff X is in working memory
+%   no_recuerda(X) -- succeed iff X is not in working memory
+%
+% The store is the `recuerda/1` dynamic predicate.  The MCP worker retracts
+% it when an agent is unloaded or a session is reset (see
+% web/mcp/runner.pl, fixed_user_predicates/1).  The Ciao port reifies the
+% same three operations over its agent_fact/2 store (gloria_compat.pl).
+
+memoriza(X) :-
+  ( recuerda(X) -> true ; assertz(recuerda(X)) ).
+
+no_recuerda(X) :-
+  \+ recuerda(X).
 
 
 /******************************************************** old methods */

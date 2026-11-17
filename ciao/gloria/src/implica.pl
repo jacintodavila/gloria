@@ -372,7 +372,7 @@ propagation( Delta, InImp, OutImps, M, M, [] ):-
   %  ( OutImps = ( Cont :: H if Rest @ HP , true),
   %    write_ir(" % -> propagating ground %q  -> \n",[G]) )
   %; OutImps = InImp ). % It's wrong!
-  ( clause( G, _ ) ; todo(_,G) belongs Delta ), % either is clause or an abd.
+  ( safe_clause( G, _ ) ; todo(_,G) belongs Delta ), % either is clause or an abd.
   OutImps = ( Cont :: H if Rest @ HP , true).
   %writef(" % -> propagating ground %q  -> \n",[G]).
 
@@ -422,7 +422,7 @@ add_pre( Pred, H0, HF ) :-
 
 findalldb( G, HP, L ) :-
   createscheme( G, Ghole ),
-  findall( Ghole, ( clause( Ghole, true ), not(sbelongs( Ghole, HP )) ), L ). 
+  findall( Ghole, ( safe_clause( Ghole, true ), not(sbelongs( Ghole, HP )) ), L ). 
 
 % findallabs( G, Delta, HP, L, Pred ) :-
 findallabs( G, Delta, HP, L, G ) :-

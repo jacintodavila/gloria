@@ -39,8 +39,8 @@ The core engine has been verified without using the builder:
 ```bash
 # These tests pass regardless of the builder target issue:
 export PATH="$HOME/.ciaoroot/v1.25.0-m1/build/bin:$PATH"
-./ciao/gloria/tests/parity_scenarios_check.sh    # 7/7 PARITY OK
-./ciao/gloria/tests/run_unittests.pl             # status=0, 13/13 passed
+./ciao/gloria/tests/parity_scenarios_check.sh    # 8/8 PARITY OK
+./ciao/gloria/tests/run_unittests.pl             # status=0, 15/15 passed
 ```
 
 ### Wasmer/Wasm Grade Build (When Emscripten Available)
@@ -83,7 +83,7 @@ gloria/
 
 ## Summary
 
-- **Native Ciao engine**: ✅ Verified (7/7 agents parity OK, unittest green)
+- **Native Ciao engine**: ✅ Verified (8/8 agents parity OK, unittest green)
 - **Builder target**: ⚠️ Needs environment config (CIAOROOT/CIAOPATH) or catalog registration
 - **Wasm/Emscripten**: 📖 Instructions documented in `testing_emscripten.md`
 - **Local static testing**: ✅ Ready with `serve_gloria.sh`
