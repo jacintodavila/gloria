@@ -1,0 +1,78 @@
+% monstruo_tareas.kb -- metas (if_/2) y creencias (def/2)
+%
+% Spec (espanol):
+%   Ud es el mayordomo remendado del Doctor: un cuerpo enorme ensamblado con
+%   un brazo de labriego, una pierna de acrobata, un ojo de pintor y una
+%   oreja de portera.  El Doctor le da ordenes de la casa y Ud las cumple
+%   poniendo a trabajar cada una de las partes prestadas.
+%
+%   Metas:
+%     Si el Doctor ordena una tarea, cumplala.
+%
+%   Creencias (que hace cada parte en cada tarea):
+%     servir_sopa: el brazo sostiene la sopa, la pierna cruza el comedor, el
+%       ojo mide la distancia, la oreja oye la orden y el cuerpo ocupa la
+%       puerta.
+%     limpiar_polvo: el brazo alcanza el estante, la pierna sube al taburete,
+%       el ojo encuentra el polvo, la oreja oye la orden y el cuerpo llena el
+%       cuarto.
+%     arreglar_gotera: el brazo aprieta la tuberia, la pierna sube al techo,
+%       el ojo mira la gotera, la oreja escucha el goteo y el cuerpo bloquea
+%       el paso.
+%     cuidar_gansos: el brazo cierra la reja, la pierna corre al corral, el
+%       ojo cuenta los gansos, la oreja oye a los gansos y el cuerpo tapa la
+%       salida.
+%     reparar_puertas: el brazo golpea la bisagra, la pierna sostiene la
+%       puerta, el ojo revisa la madera, la oreja detecta el chirrido y el
+%       cuerpo empuja la puerta.
+%
+% Nota de codificacion:
+%   Cada tarea se descompone en las acciones de las cinco partes del cuerpo;
+%   todas las acciones son abducibles (ver monstruo_tareas.main), de modo que
+%   el motor emite un do/2 por cada parte que interviene, en el mismo orden en
+%   que aparece en la creencia.
+
+% ---------------------------------------------------------------- metas
+% Si el Doctor ordena una tarea, el mayordomo la cumple.
+if_(orden(Tarea), [cumple(Tarea)]).
+
+% ------------------------------------------------------------ creencias
+% Servir la sopa: cargar, acercarse, apuntar, oir y hacer presencia.
+def(cumple(servir_sopa),
+    (brazo_de_labriego(sostiene_la_sopa),
+     pierna_de_acrobata(cruza_el_comedor),
+     ojo_de_pintor(mide_la_distancia),
+     oreja_de_portera(oye_la_orden),
+     cuerpo_enorme(ocupa_la_puerta))).
+
+% Limpiar el polvo: alcanzar, subir, ver, oir y llenar el cuarto.
+def(cumple(limpiar_polvo),
+    (brazo_de_labriego(alcanza_el_estante),
+     pierna_de_acrobata(sube_al_taburete),
+     ojo_de_pintor(encuentra_el_polvo),
+     oreja_de_portera(oye_la_orden),
+     cuerpo_enorme(llena_el_cuarto))).
+
+% Arreglar la gotera: apretar, trepar, mirar, escuchar y bloquear.
+def(cumple(arreglar_gotera),
+    (brazo_de_labriego(aprieta_la_tuberia),
+     pierna_de_acrobata(sube_al_techo),
+     ojo_de_pintor(mira_la_gotera),
+     oreja_de_portera(escucha_el_goteo),
+     cuerpo_enorme(bloquea_el_paso))).
+
+% Cuidar los gansos: cerrar, correr, contar, oir y tapar la salida.
+def(cumple(cuidar_gansos),
+    (brazo_de_labriego(cierra_la_reja),
+     pierna_de_acrobata(corre_al_corral),
+     ojo_de_pintor(cuenta_los_gansos),
+     oreja_de_portera(oye_a_los_gansos),
+     cuerpo_enorme(tapa_la_salida))).
+
+% Reparar las puertas: golpear, sostener, revisar, oir y empujar.
+def(cumple(reparar_puertas),
+    (brazo_de_labriego(golpea_la_bisagra),
+     pierna_de_acrobata(sostiene_la_puerta),
+     ojo_de_pintor(revisa_la_madera),
+     oreja_de_portera(detecta_el_chirrido),
+     cuerpo_enorme(empuja_la_puerta))).

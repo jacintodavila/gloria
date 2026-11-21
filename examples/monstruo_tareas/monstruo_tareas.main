@@ -1,0 +1,22 @@
+tracefile('monstruo_tareas.dot').  % see flach/graphviz.pl
+for_testing_only(false).
+
+% abducible predicates
+%
+% El Doctor da las ordenes de la casa.
+abd(orden).
+
+% Las partes prestadas del mayordomo remendado ejecutan sus acciones.
+abd(brazo_de_labriego).
+abd(pierna_de_acrobata).
+abd(ojo_de_pintor).
+abd(oreja_de_portera).
+abd(cuerpo_enorme).
+
+% observable predicates
+%
+observable(orden(_)).
+
+% built-in, user-defined predicates
+%
+user_built(true).
