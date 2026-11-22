@@ -1,0 +1,36 @@
+% centinela.kb -- metas (if_/2) y creencias (def/2)
+%
+% Agente de ciberseguridad y mitigacion de intrusiones:
+%   1. Falso positivo (mantenimiento): intentos_fallidos(IP) o trafico_anomalo(IP)
+%      desde ip_interna(IP) durante ventana_mantenimiento -> solo audita.
+%   2. Sospecha interna: intentos_fallidos(IP) o trafico_anomalo(IP)
+%      desde ip_interna(IP) en operacion_normal -> solicita 2FA y audita.
+%   3. Ataque externo: intentos_fallidos(IP) o trafico_anomalo(IP)
+%      desde ip_externa(IP) -> bloquea IP y levanta alerta al SOC.
+%   4. Malware critico y recuperacion temporal:
+%      - Si hash_malicioso(Host) -> aisla el host y alerta al SOC (prioridad maxima).
+%      - Si parche_aplicado(Host) en un paso posterior -> restaura el host.
+
+% ---------------------------------------------------------------- metas
+% Regla 1: Actividad interna en ventana de mantenimiento (falso positivo)
+if_((intentos_fallidos(IP), ip_interna(IP), ventana_mantenimiento), [auditar_mantenimiento(IP)]).
+if_((trafico_anomalo(IP), ip_interna(IP), ventana_mantenimiento), [auditar_mantenimiento(IP)]).
+
+% Regla 2: Actividad interna sospechosa fuera de mantenimiento
+if_((intentos_fallidos(IP), ip_interna(IP), operacion_normal), [verificar_interno(IP)]).
+if_((trafico_anomalo(IP), ip_interna(IP), operacion_normal), [verificar_interno(IP)]).
+
+% Regla 3: Actividad maliciosa desde IP externa
+if_((intentos_fallidos(IP), ip_externa(IP)), [mitigar_externo(IP)]).
+if_((trafico_anomalo(IP), ip_externa(IP)), [mitigar_externo(IP)]).
+
+% Regla 4: Deteccion de malware y restauracion tras parche
+if_(hash_malicioso(Host), [contener_malware(Host)]).
+if_(parche_aplicado(Host), [recuperar_host(Host)]).
+
+% ------------------------------------------------------------ creencias
+def(auditar_mantenimiento(IP), registrar_auditoria(IP)).
+def(verificar_interno(IP), (solicitar_2fa(IP), registrar_auditoria(IP))).
+def(mitigar_externo(IP), (bloquear_ip(IP), levantar_alerta_soc(IP))).
+def(contener_malware(Host), (aislar_host(Host), levantar_alerta_soc(Host))).
+def(recuperar_host(Host), restaurar_host(Host)).

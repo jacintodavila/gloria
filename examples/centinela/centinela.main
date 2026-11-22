@@ -1,0 +1,31 @@
+tracefile('centinela.dot').
+for_testing_only(false).
+
+% abducible predicates (actions and observables)
+abd(registrar_auditoria).
+abd(solicitar_2fa).
+abd(bloquear_ip).
+abd(levantar_alerta_soc).
+abd(aislar_host).
+abd(restaurar_host).
+abd(intentos_fallidos).
+abd(trafico_anomalo).
+abd(ip_interna).
+abd(ip_externa).
+abd(ventana_mantenimiento).
+abd(operacion_normal).
+abd(hash_malicioso).
+abd(parche_aplicado).
+
+% observable predicates
+observable(intentos_fallidos(_)).
+observable(trafico_anomalo(_)).
+observable(ip_interna(_)).
+observable(ip_externa(_)).
+observable(ventana_mantenimiento).
+observable(operacion_normal).
+observable(hash_malicioso(_)).
+observable(parche_aplicado(_)).
+
+% built-in, user-defined predicates
+user_built(true).
