@@ -55,6 +55,7 @@ AGENTS = [
     ('piojo',       'Piojo (woodlouse, pure reactive)', 'piojo.kb',    'piojo.main'),
     ('marciano',    'Marciano (Mars explorer with coordinate map)', 'marciano.kb', 'marciano.main'),
     ('vigilante',   'Vigilante (control de acceso)', 'vigilante.kb',   'vigilante.main'),
+    ('regador',     'Regador (automatic garden watering)',          'regador.kb',  'regador.main'),
 ]
 
 DEFAULT_AGENT = 'enclosure'
@@ -95,6 +96,33 @@ AGENT_RUNS = {
     'emergencia': [
         ('emergency', 0, '[emergencia]'),
         ('quiet step (no observation)', 0, '[]'),
+    ],
+    'piojo': [
+        ('step 0 (front free, rested)', 0, '[frente_libre, descansado]'),
+        ('step 1 (front free, rested)', 1, '[frente_libre, descansado]'),
+        ('step 2 (obstacle, rested)', 2, '[obstaculo_al_frente, descansado]'),
+        ('step 3 (front free, tired)', 3, '[frente_libre, cansado]'),
+    ],
+    'marciano': [
+        ('step 0 at (0,0) facing east, free', 0,
+         '[posicion(0,0), orientacion(este), frente_libre]'),
+        ('step 1 at (1,0) facing east, free', 1,
+         '[posicion(1,0), orientacion(este), frente_libre]'),
+        ('step 2 at (2,0) facing east, obstacle', 2,
+         '[posicion(2,0), orientacion(este), obstaculo_al_frente]'),
+        ('step 3 at (2,0) facing south, obstacle', 3,
+         '[posicion(2,0), orientacion(sur), obstaculo_al_frente]'),
+        ('step 4 at (2,0) facing west, free (visited)', 4,
+         '[posicion(2,0), orientacion(oeste), frente_libre]'),
+        ('step 5 at (2,0) facing north, life at (2,1)', 5,
+         '[posicion(2,0), orientacion(norte), vida]'),
+    ],
+    'regador': [
+        ('step 0 (humedad baja)', 0, '[humedad_baja]'),
+        ('step 1 (sin humedad_subio -> aviso)', 1, '[]'),
+        ('step 1 (humedad_subio -> sin aviso)', 1, '[humedad_subio]'),
+        ('step 0 (humedad baja, llueve)', 0, '[humedad_baja, llueve]'),
+        ('step 0 (humedad baja, tanque vacio)', 0, '[humedad_baja, tanque_vacio]'),
     ],
 }
 
