@@ -21,7 +21,7 @@
 :- module(t_playground,
           [enclosure_pg/0, burocratin_pg/0, gerente_pg/0, arch_pg/0,
            mylamp_pg/0, rentin_pg/0, emergencia_pg/0, piojo_pg/0,
-           marciano_pg/0, query_rewriting/0],
+           marciano_pg/0, baseball_manager_pg/0, query_rewriting/0],
           [assertions]).
 
 :- doc(title, "Gloria playground glue tests (load_agent_code/1)").
@@ -123,6 +123,28 @@ marciano_pg :-
                [do(voltear_derecha, 3)],
                [do(voltear_derecha, 4)],
                [do(reportar((2,1)), 5), do(voltear_derecha, 5)]]).
+
+:- test baseball_manager_pg
+   # "baseball_manager: pitching decisions, same golden actions as t_engine".
+
+baseball_manager_pg :-
+    pg_checks('playground/agents/baseball_manager.pl',
+              [[comienza_turno_al_bate, lanzador_actual(starter), en_dominio(starter),
+                no_cansado(starter), retiros_recientes_sin_dano(starter), pitcheos_optimos(starter)],
+               [lanzador_actual(starter), fatiga_temprana(starter)],
+               [lanzador_actual(starter), supera_limite_pitcheos(starter),
+                ordeno_calentar(rel1), calentamiento_completo(rel1), descanso_suficiente(rel1),
+                es_abridor(starter)],
+               [situacion_de_apremio, entrada_tardia, carrera_empate_o_ventaja_en_riesgo,
+                lanzador_actual(starter), bateador_actual(b1), ordeno_calentar(rel_left),
+                calentamiento_completo(rel_left), descanso_suficiente(rel_left),
+                matchup_brazo_perfil(rel_left, b1), es_abridor(starter)],
+               [equipo_pierde_por_mucho]],
+              [[do(mantener_lanzador(starter), 0)],
+               [do(calentar_bullpen, 1)],
+               [do(sustituir_lanzador(starter, rel1), 2)],
+               [do(sustituir_lanzador_tactico(starter, rel_left), 3)],
+               [do(ingresar_relevista_largo, 4), do(bloquear_relevistas_alta_jerarquia, 4)]]).
 
 :- test query_rewriting
    # "the page's disguise_trans_query/3 rewrites Gloria goals into the gloria module".

@@ -89,5 +89,7 @@ run_one piojo      examples/piojo/piojo.kb \
     '[[frente_libre,descansado],[frente_libre,descansado],[obstaculo_al_frente,descansado],[frente_libre,cansado]]'
 run_one marciano   examples/marciano/marciano.kb \
     '[[posicion(0,0),orientacion(este),frente_libre],[posicion(1,0),orientacion(este),frente_libre],[posicion(2,0),orientacion(este),obstaculo_al_frente],[posicion(2,0),orientacion(sur),obstaculo_al_frente],[posicion(2,0),orientacion(oeste),frente_libre],[posicion(2,0),orientacion(norte),vida]]'
+run_one baseball_manager examples/baseball_manager/baseball_manager.kb \
+    '[[comienza_turno_al_bate,lanzador_actual(starter),en_dominio(starter),no_cansado(starter),retiros_recientes_sin_dano(starter),pitcheos_optimos(starter)],[lanzador_actual(starter),fatiga_temprana(starter)],[lanzador_actual(starter),supera_limite_pitcheos(starter),ordeno_calentar(rel1),calentamiento_completo(rel1),descanso_suficiente(rel1),es_abridor(starter)],[situacion_de_apremio,entrada_tardia,carrera_empate_o_ventaja_en_riesgo,lanzador_actual(starter),bateador_actual(b1),ordeno_calentar(rel_left),calentamiento_completo(rel_left),descanso_suficiente(rel_left),matchup_brazo_perfil(rel_left,b1),es_abridor(starter)],[equipo_pierde_por_mucho]]'
 
 exit $fail

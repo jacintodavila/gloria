@@ -1,0 +1,69 @@
+tracefile('baseball_manager.dot').  % see flach/graphviz.pl
+for_testing_only(false).
+
+% abducible predicates (acciones/decisiones y hechos abducibles)
+%
+abd(mantener_lanzador).
+abd(calentar_bullpen).
+abd(sustituir_lanzador).
+abd(sustituir_lanzador_tactico).
+abd(ingresar_relevista_largo).
+abd(bloquear_relevistas_alta_jerarquia).
+% observables also declared as abducibles so they can be assumed from input
+abd(comienza_turno_al_bate).
+abd(lanzador_actual).
+abd(no_cansado).
+abd(fatiga_temprana).
+abd(corredores_embasados_sin_outs).
+abd(supera_limite_pitcheos).
+abd(dos_bb_consecutivas).
+abd(tercera_vuelta_alineacion).
+abd(retiros_recientes_sin_dano).
+abd(pitcheos_optimos).
+abd(entrada_tardia).
+abd(carrera_empate_o_ventaja_en_riesgo).
+abd(ordeno_calentar).
+abd(calentamiento_completo).
+abd(descanso_suficiente).
+abd(matchup_brazo_perfil).
+abd(induce_rodado).
+abd(situacion_doble_matanza).
+abd(bateador_actual).
+abd(es_abridor).
+abd(es_relevista).
+abd(enfrento_minimo_tres_bateadores).
+abd(finalizo_entrada_anterior).
+abd(lesion).
+abd(equipo_pierde_por_mucho).
+
+% observable predicates (estado percibido del juego)
+%
+observable(comienza_turno_al_bate).
+observable(lanzador_actual(_)).
+observable(no_cansado(_)).
+observable(fatiga_temprana(_)).
+observable(corredores_embasados_sin_outs).
+observable(supera_limite_pitcheos(_)).
+observable(dos_bb_consecutivas(_)).
+observable(tercera_vuelta_alineacion(_)).
+observable(retiros_recientes_sin_dano(_)).
+observable(pitcheos_optimos(_)).
+observable(entrada_tardia).
+observable(carrera_empate_o_ventaja_en_riesgo).
+observable(ordeno_calentar(_)).
+observable(calentamiento_completo(_)).
+observable(descanso_suficiente(_)).
+observable(matchup_brazo_perfil(_, _)).
+observable(induce_rodado(_)).
+observable(situacion_doble_matanza).
+observable(bateador_actual(_)).
+observable(es_abridor(_)).
+observable(es_relevista(_)).
+observable(enfrento_minimo_tres_bateadores(_)).
+observable(finalizo_entrada_anterior(_)).
+observable(lesion(_)).
+observable(equipo_pierde_por_mucho).
+
+% built-in, user-defined predicates
+%
+user_built(true).
