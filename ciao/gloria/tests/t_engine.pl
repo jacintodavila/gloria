@@ -15,10 +15,10 @@
           [enclosure_scenario/0, burocratin_scenario/0,
            gerente_scenario/0, arch_scenario/0,
            emergencia_scenario/0, piojo_scenario/0,
-           marciano_scenario/0],
+           marciano_scenario/0, baseball_manager_scenario/0],
           [assertions]).
 
-:- doc(title, "Gloria engine port tests (enclosure, burocratin, gerente, arch, emergencia, piojo, marciano)").
+:- doc(title, "Gloria engine port tests (enclosure, burocratin, gerente, arch, emergencia, piojo, marciano, baseball_manager)").
 
 :- use_module(library(format)).
 :- use_module('../src/gloria').
@@ -96,6 +96,28 @@ marciano_scenario :-
                 [do(voltear_derecha, 3)],
                 [do(voltear_derecha, 4)],
                 [do(reportar((2,1)), 5), do(voltear_derecha, 5)]]).
+
+:- test baseball_manager_scenario
+   # "baseball_manager: keep, warm bullpen, standard/tactical substitution, closer, save mode".
+
+baseball_manager_scenario :-
+    run_checks(baseball_manager0, 'examples/baseball_manager/baseball_manager.kb',
+               [[comienza_turno_al_bate, lanzador_actual(starter), en_dominio(starter),
+                 no_cansado(starter), retiros_recientes_sin_dano(starter), pitcheos_optimos(starter)],
+                [lanzador_actual(starter), fatiga_temprana(starter)],
+                [lanzador_actual(starter), supera_limite_pitcheos(starter),
+                 ordeno_calentar(rel1), calentamiento_completo(rel1), descanso_suficiente(rel1),
+                 es_abridor(starter)],
+                [situacion_de_apremio, entrada_tardia, carrera_empate_o_ventaja_en_riesgo,
+                 lanzador_actual(starter), bateador_actual(b1), ordeno_calentar(rel_left),
+                 calentamiento_completo(rel_left), descanso_suficiente(rel_left),
+                 matchup_brazo_perfil(rel_left, b1), es_abridor(starter)],
+                [equipo_pierde_por_mucho]],
+               [[do(mantener_lanzador(starter), 0)],
+                [do(calentar_bullpen, 1)],
+                [do(sustituir_lanzador(starter, rel1), 2)],
+                [do(sustituir_lanzador_tactico(starter, rel_left), 3)],
+                [do(ingresar_relevista_largo, 4), do(bloquear_relevistas_alta_jerarquia, 4)]]).
 
 run_checks(Ag, Kb, Steps, Expected) :-
     gloria:load_agent(Ag, Kb),

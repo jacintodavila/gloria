@@ -54,6 +54,7 @@ AGENTS = [
     ('emergencia',  'Emergencia (emergency help)',   'emergencia.kb',  'emergencia.main'),
     ('piojo',       'Piojo (woodlouse, pure reactive)', 'piojo.kb',    'piojo.main'),
     ('marciano',    'Marciano (Mars explorer with coordinate map)', 'marciano.kb', 'marciano.main'),
+    ('baseball_manager', 'Baseball manager (pitching decisions)', 'baseball_manager.kb', 'baseball_manager.main'),
 ]
 
 DEFAULT_AGENT = 'enclosure'
@@ -114,6 +115,18 @@ AGENT_RUNS = {
          '[posicion(2,0), orientacion(oeste), frente_libre]'),
         ('step 5 at (2,0) facing north, life at (2,1)', 5,
          '[posicion(2,0), orientacion(norte), vida]'),
+    ],
+    'baseball_manager': [
+        ('keep starter (dominant, fresh)', 0,
+         '[comienza_turno_al_bate, lanzador_actual(starter), en_dominio(starter), no_cansado(starter), retiros_recientes_sin_dano(starter), pitcheos_optimos(starter)]'),
+        ('warm bullpen (early fatigue)', 0,
+         '[lanzador_actual(starter), fatiga_temprana(starter)]'),
+        ('standard substitution (tired, reliever ready)', 0,
+         '[lanzador_actual(starter), supera_limite_pitcheos(starter), ordeno_calentar(rel1), calentamiento_completo(rel1), descanso_suficiente(rel1), es_abridor(starter)]'),
+        ('tactical substitution (high leverage)', 0,
+         '[situacion_de_apremio, entrada_tardia, carrera_empate_o_ventaja_en_riesgo, lanzador_actual(starter), bateador_actual(b1), ordeno_calentar(rel_left), calentamiento_completo(rel_left), descanso_suficiente(rel_left), matchup_brazo_perfil(rel_left, b1), es_abridor(starter)]'),
+        ('blowout save mode (down by 6+)', 0,
+         '[equipo_pierde_por_mucho]'),
     ],
 }
 
