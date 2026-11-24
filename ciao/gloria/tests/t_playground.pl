@@ -21,7 +21,7 @@
 :- module(t_playground,
           [enclosure_pg/0, burocratin_pg/0, gerente_pg/0, arch_pg/0,
            mylamp_pg/0, rentin_pg/0, emergencia_pg/0, piojo_pg/0,
-           marciano_pg/0, query_rewriting/0],
+           marciano_pg/0, regador_pg/0, query_rewriting/0],
           [assertions]).
 
 :- doc(title, "Gloria playground glue tests (load_agent_code/1)").
@@ -123,6 +123,22 @@ marciano_pg :-
                [do(voltear_derecha, 3)],
                [do(voltear_derecha, 4)],
                [do(reportar((2,1)), 5), do(voltear_derecha, 5)]]).
+
+:- test regador_pg
+   # "regador: same golden actions as t_engine, loaded from the .pl form".
+
+regador_pg :-
+    pg_checks('playground/agents/regador.pl',
+              [[humedad_baja], [], [],
+               [humedad_baja, llueve],
+               [humedad_baja, tanque_vacio],
+               [humedad_subio]],
+              [[do(abre_valvula, 0), do(registra_riego, 0)],
+               [do(avisa_dueno, 1)],
+               [],
+               [do(cierra_valvula, 3)],
+               [do(avisa_dueno, 4)],
+               []]).
 
 :- test query_rewriting
    # "the page's disguise_trans_query/3 rewrites Gloria goals into the gloria module".

@@ -1,0 +1,100 @@
+tracefile('regador.dot').  % see flach/graphviz.pl
+for_testing_only(false).
+
+% abducible predicates
+%
+% Sensaciones que reportan el suelo, el cielo y el tanque.
+abd(humedad_baja).
+abd(llueve).
+abd(tanque_vacio).
+abd(humedad_subio).
+
+% Acciones que puede ejecutar el regador.
+abd(abre_valvula).
+abd(cierra_valvula).
+abd(registra_riego).
+abd(avisa_dueno).
+
+% observable predicates
+%
+observable(humedad_baja).
+observable(llueve).
+observable(tanque_vacio).
+observable(humedad_subio).
+
+% built-in, user-defined predicates
+%
+user_built(true).
+
+% Operaciones de memoria del motor.  En SWI se reconocen solas por
+% predicate_property/2, pero el port Ciao solo trata como builtin lo que
+% aparece en user_built/1 (o en su whitelist); declararlas aqui hace que
+% if_/2 y def/2 puedan usarlas directamente en ambos motores.
+user_built(memoriza(_)).
+user_built(recuerda(_)).
+user_built(no_recuerda(_)).
+
+% --------------------------------------------------------------- reloj
+% prolog_agent/5 no pasa el tiempo T a la base de conocimientos (now/1 solo
+% pertenece al demo interactivo).  El reloj es por tanto un contador en
+% memoria de trabajo que avanza una vez por ciclo de razonamiento.  La
+% condicion `no_recuerda(tick(sentinel))` siempre se cumple: es un
+% user_built del motor, no un hecho propio, y por eso dispara la regla
+% incluso cuando no hay observaciones (T=1 con entrada `[]`).
+user_built(nuevo_tick(_)).
+user_built(tick_actual(_)).
+user_built(tick_despues(_)).
+
+nuevo_tick(0) :- no_recuerda(tick(_)).
+nuevo_tick(N) :- recuerda(tick(P)), N is P + 1, no_recuerda(tick(N)).
+
+tick_actual(N) :- recuerda(tick(N)), not(tick_despues(N)).
+tick_despues(N) :- recuerda(tick(M)), M > N.
+
+% ------------------------------------------------------------- memoria
+%   nuevo_riego(N)         -- usar el paso actual como generacion de riego
+%   inicia_riego(N)        -- crear el token pendiente riego(N)
+%   pendiente(N)           -- riego(N) aun no verificado
+%   sin_pendiente          -- no queda ningun riego por verificar
+%   cierra_verificacion(N) -- memoriza verificado(N): consume el token;
+%                             asi el aviso no se repite en pasos posteriores
+%   paso_post(N, M)        -- M es un paso posterior a N (M > N)
+%
+% Todas estas operaciones usan memoriza/1, recuerda/1 y no_recuerda/1, que
+% entienden igual el motor SWI y el port Ciao.  Por eso este .main sirve
+% consultado en `user` (MCP), con make_module/2 (SWI directo) y en el
+% playground wasm; no depende de donde se consulten los hechos.
+user_built(nuevo_riego(_)).
+user_built(inicia_riego(_)).
+user_built(pendiente(_)).
+user_built(sin_pendiente).
+user_built(cierra_verificacion(_)).
+user_built(paso_post(_,_)).
+
+nuevo_riego(N) :- tick_actual(N), no_recuerda(riego(N)).
+
+inicia_riego(N) :- memoriza(riego(N)).
+
+pendiente(N) :-
+    recuerda(riego(N)),
+    no_recuerda(verificado(N)).
+
+sin_pendiente :- not(pendiente(_)).
+
+cierra_verificacion(N) :- memoriza(verificado(N)).
+
+paso_post(N, M) :- recuerda(tick(M)), M > N.
+
+% ------------------------------------------------- marcas por paso
+% Lluvia y tanque vacio se marcan con el paso actual.  Asi la regla de
+% riego puede exigir `sin_lluvia` y `sin_agua` explicitamente, sin contar
+% con el orden de las clausulas ni con negaciones diferidas.
+user_built(marca_lluvia).
+user_built(marca_tanque).
+user_built(sin_lluvia).
+user_built(sin_agua).
+
+marca_lluvia :- tick_actual(N), memoriza(llueve_en(N)).
+marca_tanque :- tick_actual(N), memoriza(tanque_en(N)).
+sin_lluvia :- tick_actual(N), no_recuerda(llueve_en(N)).
+sin_agua :- tick_actual(N), no_recuerda(tanque_en(N)).

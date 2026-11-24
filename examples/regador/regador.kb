@@ -1,0 +1,73 @@
+% regador.kb -- metas (if_/2) y creencias (def/2)
+%
+% Spec (espanol):
+%   Ud es el regador automatico de un huerto.  Sus reglas son:
+%     1. Si la humedad del suelo esta baja y no esta lloviendo, abra la
+%        valvula y registre el riego.
+%     2. Si empieza a llover, cierre la valvula.
+%     3. Si el tanque esta vacio, avise al dueno y no intente regar.
+%     4. Despues de regar, en el paso siguiente verifique si la humedad
+%        subio; si no llego `humedad_subio`, avise al dueno.
+%
+% Nota de codificacion:
+%   * Cada ciclo avanza el reloj `tick(N)` (ver regador.main).  El riego
+%     crea el token `riego(N)` con N = paso actual; la verificacion exige
+%     `paso_post(N, _)`, por lo que NUNCA se dispara en el mismo paso en que
+%     se riego.  Al verificar se memoriza `verificado(N)`: el token queda
+%     consumido y el aviso no se repite en T=2, 3, ... (caso g).
+%   * La prioridad es explicita: `sin_lluvia` y `sin_agua` son condiciones
+%     de la regla de riego marcadas con el paso actual, de modo que
+%     lluvia y tanque vacio ganan sin depender del orden de las clausulas.
+%   * `humedad_subio` y `humedad_baja` son observaciones mutuamente
+%     excluyentes: en la verificacion, la ausencia de `humedad_subio`
+%     cuenta como "sigue baja" (caso T=1 sin observaciones).
+
+% ---------------------------------------------------------------- reloj
+% Avanzar el reloj una vez por ciclo.  `no_recuerda(tick(sentinel))` es
+% siempre cierto y no es un hecho del agente, asi que esta regla funciona
+% incluso con entrada `[]`.
+if_(no_recuerda(tick(sentinel)), [avanzar_tick]).
+def(avanzar_tick, (nuevo_tick(N), memoriza(tick(N)))).
+
+% ---------------------------------------------------------------- metas
+% 1. Si empieza a llover, cerrar la valvula.  Ademas marca la lluvia en
+%    este paso para que la regla de riego no se dispare.
+if_((llueve, marca_lluvia), [cerrar_por_lluvia]).
+
+% 2. Si el tanque esta vacio, avisar al dueno.  Igualmente se marca el
+%    paso, de modo que no se intente regar.  Si ademas llueve, se cierra
+%    la valvula y se avisa (ambas reglas son compatibles).
+if_((tanque_vacio, marca_tanque), [avisar_tanque_vacio]).
+
+% 3. Humedad baja, sin lluvia, con agua y sin verificacion pendiente:
+%    abrir la valvula y registrar el riego (crea el token riego(N)).
+if_((humedad_baja, sin_lluvia, sin_agua, sin_pendiente,
+     nuevo_riego(N), inicia_riego(N)),
+    [regar]).
+
+% 4. Verificacion correcta: hubo humedad_subio, se consume el token y no
+%    se emite ninguna accion.  Va antes que la regla de aviso para que el
+%    motor descarte primero esta alternativa.
+if_((pendiente(N), paso_post(N, _), humedad_subio, cierra_verificacion(N)),
+    [verificacion_ok]).
+
+% 5. Verificacion sin humedad_subio (incluye T=1 sin observaciones):
+%    avisar al dueno y consumir el token.
+if_((pendiente(N), paso_post(N, _), not(humedad_subio), cierra_verificacion(N)),
+    [avisar_humedad_baja]).
+
+% ------------------------------------------------------------ creencias
+% Cerrar por lluvia se hace cerrando la valvula.
+def(cerrar_por_lluvia, cierra_valvula).
+
+% Avisar por el tanque vacio se hace avisando al dueno.
+def(avisar_tanque_vacio, avisa_dueno).
+
+% Regar es abrir la valvula y registrar el riego.
+def(regar, (abre_valvula, registra_riego)).
+
+% La verificacion correcta no produce acciones.
+def(verificacion_ok, true).
+
+% Avisar que la humedad no subio se hace avisando al dueno.
+def(avisar_humedad_baja, avisa_dueno).

@@ -15,10 +15,10 @@
           [enclosure_scenario/0, burocratin_scenario/0,
            gerente_scenario/0, arch_scenario/0,
            emergencia_scenario/0, piojo_scenario/0,
-           marciano_scenario/0],
+           marciano_scenario/0, regador_scenario/0],
           [assertions]).
 
-:- doc(title, "Gloria engine port tests (enclosure, burocratin, gerente, arch, emergencia, piojo, marciano)").
+:- doc(title, "Gloria engine port tests (enclosure, burocratin, gerente, arch, emergencia, piojo, marciano, regador)").
 
 :- use_module(library(format)).
 :- use_module('../src/gloria').
@@ -96,6 +96,22 @@ marciano_scenario :-
                 [do(voltear_derecha, 3)],
                 [do(voltear_derecha, 4)],
                 [do(reportar((2,1)), 5), do(voltear_derecha, 5)]]).
+
+:- test regador_scenario
+   # "regador: low humidity -> open+register; next step without humedad_subio -> warn; rain/tank priority".
+
+regador_scenario :-
+    run_checks(regador0, 'examples/regador/regador.kb',
+               [[humedad_baja], [], [],
+                [humedad_baja, llueve],
+                [humedad_baja, tanque_vacio],
+                [humedad_subio]],
+               [[do(abre_valvula, 0), do(registra_riego, 0)],
+                [do(avisa_dueno, 1)],
+                [],
+                [do(cierra_valvula, 3)],
+                [do(avisa_dueno, 4)],
+                []]).
 
 run_checks(Ag, Kb, Steps, Expected) :-
     gloria:load_agent(Ag, Kb),

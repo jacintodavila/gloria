@@ -91,5 +91,7 @@ run_one piojo      examples/piojo/piojo.kb \
     '[[frente_libre,descansado],[frente_libre,descansado],[obstaculo_al_frente,descansado],[frente_libre,cansado]]'
 run_one marciano   examples/marciano/marciano.kb \
     '[[posicion(0,0),orientacion(este),frente_libre],[posicion(1,0),orientacion(este),frente_libre],[posicion(2,0),orientacion(este),obstaculo_al_frente],[posicion(2,0),orientacion(sur),obstaculo_al_frente],[posicion(2,0),orientacion(oeste),frente_libre],[posicion(2,0),orientacion(norte),vida]]'
+run_one regador    examples/regador/regador.kb \
+    '[[humedad_baja],[],[],[humedad_baja,llueve],[humedad_baja,tanque_vacio],[humedad_subio]]'
 
 exit $fail
